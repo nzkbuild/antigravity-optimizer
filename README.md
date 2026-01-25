@@ -1,10 +1,10 @@
 # Antigravity Optimizer
 
+![Antigravity Optimizer Banner](assets/banner.svg)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/nzkbuild/antigravity-optimizer?style=social)](https://github.com/nzkbuild/antigravity-optimizer)
 [![GitHub issues](https://img.shields.io/github/issues/nzkbuild/antigravity-optimizer)](https://github.com/nzkbuild/antigravity-optimizer/issues)
-
-**Made for Antigravity IDE**
 
 One-command skill routing for Antigravity workflows and CLI users. It picks the best skills for a task and outputs a ready-to-paste `/skill` prompt.
 
