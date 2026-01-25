@@ -1,0 +1,13 @@
+# Local skills library (installed separately)
+.agent/skills/
+
+# Router feedback
+.agent/skills/.router_feedback.json
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+Thumbs.db
+.DS_Store
