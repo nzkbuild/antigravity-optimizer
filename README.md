@@ -4,7 +4,11 @@
 [![GitHub stars](https://img.shields.io/github/stars/nzkbuild/antigravity-optimizer?style=social)](https://github.com/nzkbuild/antigravity-optimizer)
 [![GitHub issues](https://img.shields.io/github/issues/nzkbuild/antigravity-optimizer)](https://github.com/nzkbuild/antigravity-optimizer/issues)
 
+**Made for Antigravity IDE**
+
 One-command skill routing for Antigravity workflows and CLI users. It picks the best skills for a task and outputs a ready-to-paste `/skill` prompt.
+
+**Requires the skills library by sickn33:** https://github.com/sickn33/antigravity-awesome-skills
 
 ## Why this exists
 Most users do not want to memorize 200+ skills. This router makes skills usable for non-technical and "vibe coding" workflows with a single command.
@@ -16,6 +20,11 @@ Most users do not want to memorize 200+ skills. This router makes skills usable 
 - Easy-mode intake for vague requests
 - Auto-copy to clipboard (Windows)
 - Verification mode to check skill index health
+
+## Step 0 (required): Install the skills library
+```powershell
+git clone https://github.com/sickn33/antigravity-awesome-skills.git .agent/skills
+```
 
 ## Quick start (CLI)
 ```powershell
@@ -44,12 +53,6 @@ Build a landing page for a SaaS
 .\activate-skills.ps1 --intake
 .\activate-skills.ps1 --verify
 .\activate-skills.ps1 --no-clipboard "Task text"
-```
-
-## Skills source
-This project routes to skills from `antigravity-awesome-skills` by sickn33. Install it in `.agent/skills`:
-```powershell
-git clone https://github.com/sickn33/antigravity-awesome-skills.git .agent/skills
 ```
 
 ## Credits
