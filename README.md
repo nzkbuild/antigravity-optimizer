@@ -1,62 +1,66 @@
 # Antigravity Optimizer
 
-![Antigravity Optimizer Banner](assets/banner.svg)
+![Antigravity Banner](assets/banner.svg)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+**Stop memorizing skills. Just build.**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/nzkbuild/antigravity-optimizer?style=social)](https://github.com/nzkbuild/antigravity-optimizer)
-[![GitHub issues](https://img.shields.io/github/issues/nzkbuild/antigravity-optimizer)](https://github.com/nzkbuild/antigravity-optimizer/issues)
 
-One-command skill routing for Antigravity workflows and CLI users. It picks the best skills for a task and outputs a ready-to-paste `/skill` prompt.
+The **Antigravity Optimizer** makes using AI skills effortless. It automatically picks the right tools for your task so you don't have to remember 200+ command names.
 
-**Requires the skills library by sickn33:** https://github.com/sickn33/antigravity-awesome-skills
+> [!NOTE]
+> **Credits**: This project is a router and workflow optimizer. All the amazing underlying skills are created by **[sickn33](https://github.com/sickn33)**. We just make them easier to access!
 
-## Why this exists
-Most users do not want to memorize 200+ skills. This router makes skills usable for non-technical and "vibe coding" workflows with a single command.
+---
 
-## Features
-- One command to select skills and format a `/skill` prompt
-- Antigravity `/activate-skills` workflow support
-- Skill bundles (frontend/backend/marketing/security/product)
-- Easy-mode intake for vague requests
-- Auto-copy to clipboard (Windows)
-- Verification mode to check skill index health
+## 🚀 Quick Start
 
-## Step 0 (required): Install the skills library
+**You don't need to be a coding expert.** We made a simple script to set everything up for you.
+
+### 1. Setup
+Runs in seconds. Opens a menu to choose "Essentials" (recommended) or "Full" mode.
 ```powershell
-git clone https://github.com/sickn33/antigravity-awesome-skills.git .agent/skills
+.\setup.ps1
 ```
 
-## Quick start (CLI)
+### 2. Usage
+Just tell it what you want to do in plain English.
+
+**From your terminal:**
 ```powershell
-.\activate-skills.ps1 "Build a landing page for a SaaS"
+.\activate-skills.ps1 "Make a modern landing page"
 ```
 
-Output:
+**Inside Antigravity:**
 ```
-/copywriting /page-cro
-Build a landing page for a SaaS
-```
-
-## Quick start (Antigravity)
-1) Install the workflow:
-```powershell
-.\scripts\install.ps1
-```
-2) In Antigravity chat:
-```
-/activate-skills Build a landing page for a SaaS
+/activate-skills Make a modern landing page
 ```
 
-## Common options
-```powershell
-.\activate-skills.ps1 --bundle frontend "Build a landing page"
-.\activate-skills.ps1 --intake
-.\activate-skills.ps1 --verify
-.\activate-skills.ps1 --no-clipboard "Task text"
-```
+---
 
-## Credits
-- Skills library: https://github.com/sickn33/antigravity-awesome-skills
+## 💡 Why use this?
 
-## License
-See `LICENSE`.
+- **For Vibe Coders**: You rely on AI to build. This tool ensures your AI has the *exact* instructions it needs without you managing files manually.
+- **No Memorization**: Forget about "which skill do I need for SEO?". Just type "SEO" and let the Optimizer decide.
+- **Always Updated**: We pull the latest skills directly from the source.
+
+---
+
+## ❤️ Credits & Attribution
+
+This project stands on the shoulders of giants.
+
+**Primary Skills Library**: [Antigravity Awesome Skills](https://github.com/sickn33/antigravity-awesome-skills) by **sickn33**.
+*   Please star their repo!
+*   All skill definitions and markdown files are sourced from their incredible work.
+*   This repo (Optimizer) purely provides the *routing logic* to help you use those skills faster.
+
+## 🤝 Contributing
+
+If you want to improve the *router*, feel free to contribute here.
+If you have new *skills* to add, please contribute directly to [sickn33's repository](https://github.com/sickn33/antigravity-awesome-skills).
+
+## 📄 License
+
+MIT © [nzkbuild](https://github.com/nzkbuild)

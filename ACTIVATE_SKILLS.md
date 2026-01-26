@@ -5,6 +5,7 @@ One command to pick the best skills and format an Antigravity prompt.
 Usage:
 
 ```powershell
+.\scripts\install.ps1 -AddPath
 .\activate-skills.ps1 "Design a pricing page for a SaaS"
 ```
 

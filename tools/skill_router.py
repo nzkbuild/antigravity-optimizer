@@ -12,7 +12,9 @@ DEFAULT_MAX_SKILLS = 2
 MAX_SKILLS_CAP = 3
 MIN_SCORE = 2
 RELATIVE_THRESHOLD = 0.7
-FEEDBACK_FILE = Path(".agent/skills/.router_feedback.json")
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SKILLS_ROOT = REPO_ROOT / ".agent" / "skills"
+FEEDBACK_FILE = SKILLS_ROOT / ".router_feedback.json"
 BUNDLES = {
     "frontend": ["frontend-design", "ui-ux-pro-max", "react-best-practices"],
     "backend": ["backend-dev-guidelines", "api-patterns", "database-design"],
@@ -206,15 +208,15 @@ def main():
     max_skills = max(1, min(args.max, MAX_SKILLS_CAP))
     task = " ".join(args.task).strip()
 
-    index_path = Path(".agent/skills/skills_index.json")
+    index_path = SKILLS_ROOT / "skills_index.json"
     if not index_path.exists():
         print("Error: skills_index.json not found at .agent/skills/skills_index.json", file=sys.stderr)
         return 1
 
     skills = load_index(index_path)
     if args.verify:
-        skills_dir = Path(".agent/skills/skills")
-        skill_paths = {str(p.parent.relative_to(Path(".agent/skills")).as_posix()) for p in skills_dir.rglob("SKILL.md")}
+        skills_dir = SKILLS_ROOT / "skills"
+        skill_paths = {str(p.parent.relative_to(SKILLS_ROOT).as_posix()) for p in skills_dir.rglob("SKILL.md")}
         index_paths = {item.get("path") for item in skills if isinstance(item, dict) and item.get("path")}
         missing_on_disk = sorted(index_paths - skill_paths)
         missing_in_index = sorted(skill_paths - index_paths)
