@@ -11,6 +11,7 @@ $Green = "Green"
 $Yellow = "Yellow"
 $Red = "Red"
 $White = "White"
+$Gray = "Gray"
 
 function Write-Color {
     param($Text, $Color = $White)
