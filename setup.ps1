@@ -40,7 +40,13 @@ function Install-Skills {
     if (Test-Path $installScript) {
         # Pass appropriate flags. We always want to install global rules and skills.
         # We use -InstallGlobalRules to make sure the router is active.
-        & $installScript -InstallGlobalRules
+        $customRoot = Read-Host "Custom Codex skills path? (Press Enter for auto-detect)"
+        if ($customRoot) {
+            [Environment]::SetEnvironmentVariable("ANTIGRAVITY_SKILLS_ROOT", $customRoot, "User")
+            & $installScript -InstallGlobalRules -SkillsRoot $customRoot
+        } else {
+            & $installScript -InstallGlobalRules
+        }
         if ($LASTEXITCODE -eq 0) {
             Write-Color "[+] Skills installed successfully." $Green
         } else {
@@ -55,7 +61,7 @@ function Cleanup-Essentials {
     Write-Host ""
     Write-Color "[*] Cleaning up for Essentials Mode..." $Yellow
     
-    $keepList = @(".agent", "scripts", "tools", "workflows", "activate-skills.cmd", "activate-skills.ps1", "setup.ps1", "LICENSE", ".gitignore", ".git")
+    $keepList = @("assets", "scripts", "skills", "tools", "workflows", "activate-skills.cmd", "activate-skills.ps1", "setup.ps1", "LICENSE", ".gitignore", ".git")
     $currentLocation = Get-Location
 
     $items = Get-ChildItem -Path $currentLocation
@@ -72,7 +78,8 @@ function Cleanup-Essentials {
 # Antigravity Optimizer (Essentials)
 
 Your optimizer is ready.
-Skills have been installed to `.agent/skills`.
+Skills have been installed to your Codex skills folder.
+Restart Codex to pick up the new activate-skills skill.
 
 ## Quick Start
 
@@ -86,6 +93,9 @@ Skills have been installed to `.agent/skills`.
    /activate-skills Your Task Here
    ```
 
+3. **In Codex**:
+   Use the `activate-skills` skill and provide your task.
+
 ## Updates
 Run `.\scripts\install.ps1` to update skills or global rules.
 "@
@@ -97,12 +107,12 @@ Run `.\scripts\install.ps1` to update skills or global rules.
 Show-Banner
 
 Write-Color "Welcome to the Antigravity Optimizer." $White
-Write-Color "This script will set up your environment and install the necessary skills." $White
+Write-Color "This script installs skills for Codex and sets up Antigravity workflows." $White
 Write-Host ""
 Write-Color "Select Installation Mode:" $Cyan
 Write-Color "  [1] Essentials Only (Recommended)" $Green
 Write-Color "      - Installs skills & tools" $White
-Write-Color "      - Removes docs, assets, and extra files for a clean project root" $White
+Write-Color "      - Removes docs and extra files (keeps assets) for a clean project root" $White
 Write-Host ""
 Write-Color "  [2] Full Repository" $Yellow
 Write-Color "      - Installs skills & tools" $White

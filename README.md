@@ -2,65 +2,83 @@
 
 ![Antigravity Banner](assets/banner.svg)
 
-**Stop memorizing skills. Just build.**
+Stop memorizing skills. Just build.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/nzkbuild/antigravity-optimizer?style=social)](https://github.com/nzkbuild/antigravity-optimizer)
+The Antigravity Optimizer routes your request to the best skills and outputs a ready-to-use /skill prompt.
 
-The **Antigravity Optimizer** makes using AI skills effortless. It automatically picks the right tools for your task so you don't have to remember 200+ command names.
+Note: This project is a router and workflow helper. The underlying skills are authored by [sickn33].
 
-> [!NOTE]
-> **Credits**: This project is a router and workflow optimizer. All the amazing underlying skills are created by **[sickn33](https://github.com/sickn33)**. We just make them easier to access!
+## Quick Start
 
----
+Run setup after cloning:
 
-## 🚀 Quick Start
-
-**You don't need to be a coding expert.** We made a simple script to set everything up for you.
-
-### 1. Setup
-Runs in seconds. Opens a menu to choose "Essentials" (recommended) or "Full" mode.
 ```powershell
 .\setup.ps1
 ```
 
-### 2. Usage
-Just tell it what you want to do in plain English.
+Setup installs skills into your Codex skills folder, sets up the Antigravity workflow, and installs the `activate-skills` Codex skill. Restart Codex after setup to pick up the new skill.
 
-**From your terminal:**
+## Where Things Go
+
+By default, everything is auto-detected. You do not need to provide a path.
+
+- **Codex skills folder**: `%CODEX_HOME%\skills` if `CODEX_HOME` is set, otherwise `C:\Users\<you>\.codex\skills`
+- **Antigravity workflow**: `C:\Users\<you>\.gemini\antigravity\global_workflows\activate-skills.md`
+- **Router location**: this repo (saved in `ANTIGRAVITY_OPTIMIZER_ROOT`)
+
+If you need a custom skills location, set `ANTIGRAVITY_SKILLS_ROOT` before running `.\setup.ps1`. This should still point to Codex's skills folder if you want Codex to load them.
+
+## Usage
+
+From your terminal:
+
 ```powershell
 .\activate-skills.ps1 "Make a modern landing page"
 ```
 
-**Inside Antigravity:**
+Inside Antigravity IDE:
+
 ```
 /activate-skills Make a modern landing page
 ```
 
----
+Inside Codex (no terminal):
+Use the `activate-skills` skill and provide your task. It runs the router and returns the /skill prompt.
 
-## 💡 Why use this?
+## How It Works (3 Steps)
 
-- **For Vibe Coders**: You rely on AI to build. This tool ensures your AI has the *exact* instructions it needs without you managing files manually.
-- **No Memorization**: Forget about "which skill do I need for SEO?". Just type "SEO" and let the Optimizer decide.
-- **Always Updated**: We pull the latest skills directly from the source.
+1) Run `.\setup.ps1`
+   - Downloads the skills repo into a local cache
+   - Copies all skills into Codex's skills folder
+   - Installs Antigravity workflow and the Codex `activate-skills` skill
+2) Invoke the router
+   - Antigravity: `/activate-skills <task>`
+   - Codex: use the `activate-skills` skill
+3) Apply the output
+   - The router returns `/skill ...` + task; paste/send it to apply the skills
 
----
+## Troubleshooting
 
-## ❤️ Credits & Attribution
+- **Codex doesn't see `activate-skills`**
+  - Restart Codex after running `.\setup.ps1`.
+  - Check that `activate-skills` exists under `C:\Users\<you>\.codex\skills` (or `%CODEX_HOME%\skills`).
 
-This project stands on the shoulders of giants.
+- **Router says `skills_index.json` not found**
+  - Run `.\scripts\install.ps1` again.
+  - If you set `ANTIGRAVITY_SKILLS_ROOT`, ensure it points to the folder that contains `skills_index.json`.
 
-**Primary Skills Library**: [Antigravity Awesome Skills](https://github.com/sickn33/antigravity-awesome-skills) by **sickn33**.
-*   Please star their repo!
-*   All skill definitions and markdown files are sourced from their incredible work.
-*   This repo (Optimizer) purely provides the *routing logic* to help you use those skills faster.
+- **Setup fails to clone skills**
+  - Install git, then rerun `.\setup.ps1`.
+  - If you're behind a proxy or offline, cloning will fail.
 
-## 🤝 Contributing
+- **Antigravity `/activate-skills` doesn't work**
+  - Re-run `.\scripts\install.ps1` to reinstall the workflow.
+  - Ensure this repo still exists at the same path (the workflow calls the router here).
 
-If you want to improve the *router*, feel free to contribute here.
-If you have new *skills* to add, please contribute directly to [sickn33's repository](https://github.com/sickn33/antigravity-awesome-skills).
+## Credits
 
-## 📄 License
+Primary Skills Library: Antigravity Awesome Skills by [sickn33].
 
-MIT © [nzkbuild](https://github.com/nzkbuild)
+## License
+
+MIT (c) [nzkbuild]

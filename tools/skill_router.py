@@ -13,7 +13,29 @@ MAX_SKILLS_CAP = 3
 MIN_SCORE = 2
 RELATIVE_THRESHOLD = 0.7
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SKILLS_ROOT = REPO_ROOT / ".agent" / "skills"
+
+def resolve_skills_root():
+    env_root = os.getenv("ANTIGRAVITY_SKILLS_ROOT", "").strip()
+    if env_root:
+        env_path = Path(env_root)
+        if (env_path / "skills_index.json").exists():
+            return env_path
+
+    repo_root = REPO_ROOT / ".agent" / "skills"
+    if (repo_root / "skills_index.json").exists():
+        return repo_root
+
+    codex_home = os.getenv("CODEX_HOME", "").strip()
+    if not codex_home:
+        codex_home = str(Path.home() / ".codex")
+    codex_skills = Path(codex_home) / "skills"
+    if (codex_skills / "skills_index.json").exists():
+        return codex_skills
+
+    return repo_root
+
+
+SKILLS_ROOT = resolve_skills_root()
 FEEDBACK_FILE = SKILLS_ROOT / ".router_feedback.json"
 BUNDLES = {
     "frontend": ["frontend-design", "ui-ux-pro-max", "react-best-practices"],
@@ -210,12 +232,14 @@ def main():
 
     index_path = SKILLS_ROOT / "skills_index.json"
     if not index_path.exists():
-        print("Error: skills_index.json not found at .agent/skills/skills_index.json", file=sys.stderr)
+        print(f"Error: skills_index.json not found at {index_path}", file=sys.stderr)
         return 1
 
     skills = load_index(index_path)
     if args.verify:
         skills_dir = SKILLS_ROOT / "skills"
+        if not skills_dir.exists():
+            skills_dir = SKILLS_ROOT
         skill_paths = {str(p.parent.relative_to(SKILLS_ROOT).as_posix()) for p in skills_dir.rglob("SKILL.md")}
         index_paths = {item.get("path") for item in skills if isinstance(item, dict) and item.get("path")}
         missing_on_disk = sorted(index_paths - skill_paths)

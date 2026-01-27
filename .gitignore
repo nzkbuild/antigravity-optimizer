@@ -4,6 +4,9 @@
 # Router feedback
 .agent/skills/.router_feedback.json
 
+# Cache
+.cache/
+
 # Python
 __pycache__/
 *.pyc
