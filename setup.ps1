@@ -113,6 +113,12 @@ function Prompt-SetGlobalOptimizerRoot {
         [Environment]::SetEnvironmentVariable("ANTIGRAVITY_OPTIMIZER_ROOT", $PSScriptRoot, "User")
         [Environment]::SetEnvironmentVariable("ANTIGRAVITY_OPTIMIZER_ROOT", $PSScriptRoot, "Process")
         Write-Color "[+] Saved ANTIGRAVITY_OPTIMIZER_ROOT for this user." $Green
+        $savedValue = [Environment]::GetEnvironmentVariable("ANTIGRAVITY_OPTIMIZER_ROOT", "User")
+        if ($savedValue) {
+            Write-Color "[+] Verified: ANTIGRAVITY_OPTIMIZER_ROOT = $savedValue" $Green
+        } else {
+            Write-Color "[!] Could not verify ANTIGRAVITY_OPTIMIZER_ROOT after setting it." $Red
+        }
         Write-Color "    Restart Codex/terminal to apply it everywhere." $Yellow
     } else {
         Write-Color "[i] Skipped. You can run setup again later to enable it." $Gray
