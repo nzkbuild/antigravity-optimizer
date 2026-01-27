@@ -118,6 +118,17 @@ function Prompt-SetGlobalOptimizerRoot {
             Write-Color "[+] Verified: ANTIGRAVITY_OPTIMIZER_ROOT = $savedValue" $Green
         } else {
             Write-Color "[!] Could not verify ANTIGRAVITY_OPTIMIZER_ROOT after setting it." $Red
+            Write-Color "    This can happen if the user profile registry write didn't persist." $Yellow
+            $repair = Read-Host "Try a repair write using setx now? [y/N]"
+            if ($repair -match "^[yY]$") {
+                & setx ANTIGRAVITY_OPTIMIZER_ROOT "$PSScriptRoot" | Out-Null
+                $savedValue = [Environment]::GetEnvironmentVariable("ANTIGRAVITY_OPTIMIZER_ROOT", "User")
+                if ($savedValue) {
+                    Write-Color "[+] Repair successful: ANTIGRAVITY_OPTIMIZER_ROOT = $savedValue" $Green
+                } else {
+                    Write-Color "[!] Repair failed. Please set it manually or contact support." $Red
+                }
+            }
         }
         Write-Color "    Restart Codex/terminal to apply it everywhere." $Yellow
     } else {
