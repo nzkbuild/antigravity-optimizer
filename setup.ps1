@@ -103,6 +103,22 @@ Run `.\scripts\install.ps1` to update skills or global rules.
     Write-Color "[+] Cleanup complete. You have a clean slate." $Green
 }
 
+function Prompt-SetGlobalOptimizerRoot {
+    Write-Host ""
+    Write-Color "Make skills available everywhere?" $Cyan
+    Write-Color "This stores the repo path once so `$activate-skills works from any folder." $White
+    Write-Color "Recommended for non-technical users." $Green
+    $setGlobal = Read-Host "Set ANTIGRAVITY_OPTIMIZER_ROOT permanently? [y/N]"
+    if ($setGlobal -match "^[yY]$") {
+        [Environment]::SetEnvironmentVariable("ANTIGRAVITY_OPTIMIZER_ROOT", $PSScriptRoot, "User")
+        [Environment]::SetEnvironmentVariable("ANTIGRAVITY_OPTIMIZER_ROOT", $PSScriptRoot, "Process")
+        Write-Color "[+] Saved ANTIGRAVITY_OPTIMIZER_ROOT for this user." $Green
+        Write-Color "    Restart Codex/terminal to apply it everywhere." $Yellow
+    } else {
+        Write-Color "[i] Skipped. You can run setup again later to enable it." $Gray
+    }
+}
+
 # Main Menu
 Show-Banner
 
@@ -129,6 +145,7 @@ switch ($selection) {
         $confirm = Read-Host "This will DELETE non-essential files from this folder. Continue? [y/N]"
         if ($confirm -match "^[yY]$") {
             Install-Skills
+            Prompt-SetGlobalOptimizerRoot
             Cleanup-Essentials
         } else {
             Write-Color "Aborted." $Red
@@ -139,6 +156,7 @@ switch ($selection) {
         Write-Host ""
         Write-Color ">> Selected: Full Repository" $Yellow
         Install-Skills
+        Prompt-SetGlobalOptimizerRoot
     }
     Default {
         Write-Host ""
@@ -146,6 +164,7 @@ switch ($selection) {
         $confirm = Read-Host "This will DELETE non-essential files from this folder. Continue? [y/N]"
         if ($confirm -match "^[yY]$") {
             Install-Skills
+            Prompt-SetGlobalOptimizerRoot
             Cleanup-Essentials
         } else {
             Write-Color "Aborted." $Red

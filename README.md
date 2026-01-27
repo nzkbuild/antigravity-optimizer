@@ -17,6 +17,7 @@ Run setup after cloning:
 ```
 
 Setup installs skills into your Codex skills folder, sets up the Antigravity workflow, and installs the `activate-skills` Codex skill. Restart Codex after setup to pick up the new skill.
+During setup, you can optionally save `ANTIGRAVITY_OPTIMIZER_ROOT` so skills work from any folder (recommended for non-technical users).
 
 ## Where Things Go
 
@@ -44,6 +45,22 @@ Inside Antigravity IDE:
 
 Inside Codex (no terminal):
 Use the `activate-skills` skill and provide your task. It runs the router and returns the /skill prompt.
+
+## Skills Updates
+
+Check for updates to the skills repo and optionally pull them:
+
+```powershell
+.\skills-update.ps1
+```
+
+For non-technical users on Windows, you can also run:
+
+```
+skills-update.cmd
+```
+
+This shows recent commits and changed files, then asks before applying updates.
 
 ## How It Works (3 Steps)
 
