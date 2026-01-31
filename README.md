@@ -7,10 +7,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/nzkbuild/antigravity-optimizer?style=social)](https://github.com/nzkbuild/antigravity-optimizer)
 
-The **Antigravity Optimizer** makes using AI skills effortless. It automatically picks the right tools for your task so you don't have to remember 200+ command names.
+The **Antigravity Optimizer** automatically picks the right AI skills for your task. 625+ skills, zero memorization.
 
-> [!NOTE]
-> **Credits**: This project is a router and workflow optimizer. All the amazing underlying skills are created by **[sickn33](https://github.com/sickn33)**. We just make them easier to access!
+> **Credits**: Skills are from **[sickn33's Antigravity Awesome Skills](https://github.com/sickn33/antigravity-awesome-skills)**. We just make them easier to use!
 
 ---
 
@@ -21,36 +20,71 @@ The **Antigravity Optimizer** makes using AI skills effortless. It automatically
 .\setup.ps1
 ```
 
+Choose your mode:
+- **[1] Essentials** - Installs skills, removes extra docs
+- **[2] Full Repository** - Keeps everything  
+- **[3] Update Skills Only** - Quick update (2 seconds)
+
 ### 2. Usage
 
 **Windows PowerShell:**
 ```powershell
-.\activate-skills.ps1 "Make a modern landing page"
+.\activate-skills.ps1 "Build a landing page with dark mode"
 ```
 
 **Linux/macOS:**
 ```bash
-./activate-skills.sh "Make a modern landing page"
+./activate-skills.sh "Build a landing page with dark mode"
 ```
 
 **Inside Antigravity IDE:**
 ```
-/activate-skills Make a modern landing page
+/activate-skills Build a landing page with dark mode
 ```
 
 ---
 
-## 💡 Why use this?
+## 💡 Features
 
-- **For Vibe Coders**: AI has the exact instructions it needs without you managing files manually.
-- **No Memorization**: Just type what you want. Let the Optimizer pick the skills.
-- **Always Current**: Running `.\setup.ps1` automatically updates skills to latest.
+| Feature | Description |
+|---------|-------------|
+| **625+ Skills** | Auto-updated from sickn33's library |
+| **Smart Routing** | Picks the best skills for your task |
+| **Cross-Platform** | Windows, Linux, macOS |
+| **Auto-Update** | Run setup anytime to get latest skills |
+| **Dual Install** | Works in both Codex CLI and Antigravity IDE |
+| **Custom Bundles** | Frontend, backend, marketing presets |
+
+---
+
+## 🔧 Bundles
+
+Use preset skill bundles:
+```powershell
+.\activate-skills.ps1 --bundle frontend "Build a pricing page"
+.\activate-skills.ps1 --bundle backend "Create a REST API"
+.\activate-skills.ps1 --bundle fullstack "Build a SaaS app"
+```
+
+Available: `frontend`, `backend`, `fullstack`, `marketing`, `security`, `product`, `devops`
+
+Edit `bundles.json` to customize.
+
+---
+
+## 📦 Where Skills Go
+
+After setup, skills are installed to:
+- `~/.codex/skills/` - For Codex CLI
+- `.agent/skills/` - For Antigravity IDE
+
+Both locations are automatically populated.
 
 ---
 
 ## ❤️ Credits
 
-**Primary Skills Library**: [Antigravity Awesome Skills](https://github.com/sickn33/antigravity-awesome-skills) by **sickn33**.
+**Primary Skills Library**: [Antigravity Awesome Skills](https://github.com/sickn33/antigravity-awesome-skills) by **sickn33**. Please star their repo!
 
 ## 📄 License
 
