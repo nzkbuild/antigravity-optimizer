@@ -69,15 +69,17 @@ function Ensure-SkillsRepo {
         exit 1
     }
 
-    # Copy skills to Codex folder
-    if (-not (Test-Path $skillsRoot)) {
-        New-Item -ItemType Directory -Path $skillsRoot | Out-Null
-    }
-
+    # Count skills
     $skillsSourceDir = Join-Path $skillsCache "skills"
     if (-not (Test-Path $skillsSourceDir)) {
         Write-Error "Skills folder not found in repo: $skillsSourceDir"
         exit 1
+    }
+    $skillCount = (Get-ChildItem -Path $skillsSourceDir -Directory).Count
+
+    # Copy skills to Codex folder (only skills/ and skills_index.json - skip docs, assets, etc.)
+    if (-not (Test-Path $skillsRoot)) {
+        New-Item -ItemType Directory -Path $skillsRoot | Out-Null
     }
 
     $skillDirs = Get-ChildItem -Path $skillsSourceDir -Directory
@@ -90,7 +92,7 @@ function Ensure-SkillsRepo {
     }
 
     Copy-Item -Path $skillsIndex -Destination (Join-Path $skillsRoot "skills_index.json") -Force
-    Write-Host "Skills installed to: $skillsRoot"
+    Write-Host "Skills installed to: $skillsRoot ($skillCount skills)"
 
     # Also copy to .agent/skills in this repo (for Antigravity IDE)
     $agentSkillsDir = Join-Path $repoRoot ".agent\skills"
@@ -98,7 +100,7 @@ function Ensure-SkillsRepo {
         New-Item -ItemType Directory -Path $agentSkillsDir -Force | Out-Null
     }
     
-    # Copy skills folder
+    # Copy skills folder (only skills/ and index - no docs, assets, bin, etc.)
     $agentSkillsSubDir = Join-Path $agentSkillsDir "skills"
     if (Test-Path $agentSkillsSubDir) {
         Remove-Item -Recurse -Force $agentSkillsSubDir
@@ -106,6 +108,19 @@ function Ensure-SkillsRepo {
     Copy-Item -Path $skillsSourceDir -Destination $agentSkillsSubDir -Recurse
     Copy-Item -Path $skillsIndex -Destination (Join-Path $agentSkillsDir "skills_index.json") -Force
     Write-Host "Skills also installed to: $agentSkillsDir"
+
+    # Auto-add .agent/skills/ to .gitignore (prevent 2000+ file tracking)
+    $gitignorePath = Join-Path $repoRoot ".gitignore"
+    if (Test-Path $gitignorePath) {
+        $gitignoreContent = Get-Content $gitignorePath -Raw
+        if ($gitignoreContent -notmatch "\.agent/skills/") {
+            Add-Content -Path $gitignorePath -Value "`n# Skills (installed separately)`n.agent/skills/"
+            Write-Host "Added .agent/skills/ to .gitignore (prevents tracking $skillCount skill files)"
+        }
+    }
+
+    Write-Host ""
+    Write-Host "Total skills installed: $skillCount" -ForegroundColor Green
 }
 
 function Install-Workflow {
