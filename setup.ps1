@@ -56,7 +56,7 @@ function Cleanup-Essentials {
     Write-Host ""
     Write-Color "[*] Cleaning up for Essentials Mode..." $Yellow
     
-    $keepList = @("assets", "scripts", "skills", "tools", "workflows", "activate-skills.ps1", "activate-skills.sh", "setup.ps1", "LICENSE", ".gitignore", ".gitattributes", ".git", "bundles.json")
+    $keepList = @(".agent", ".cache", ".git", ".gitignore", ".gitattributes", "assets", "scripts", "tools", "workflows", "activate-skills.ps1", "activate-skills.sh", "setup.ps1", "bundles.json", "LICENSE")
     $currentLocation = Get-Location
 
     $items = Get-ChildItem -Path $currentLocation
