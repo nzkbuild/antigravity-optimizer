@@ -41,13 +41,17 @@ function Install-Skills {
         # Pass appropriate flags. We always want to install global rules and skills.
         # We use -InstallGlobalRules to make sure the router is active.
         & $installScript -InstallGlobalRules
-        if ($LASTEXITCODE -eq 0) {
-            Write-Color "[+] Skills installed successfully." $Green
-        } else {
-            Write-Color "[!] Warning: Skills installation finished with exit code $LASTEXITCODE." $Red
+        if ($LASTEXITCODE -ne 0) {
+            Write-Color "[!] Error: Skills installation failed with exit code $LASTEXITCODE." $Red
+            Write-Host ""
+            Pause
+            exit 1
         }
+        Write-Color "[+] Skills installed successfully." $Green
     } else {
         Write-Color "[!] Error: scripts\install.ps1 not found." $Red
+        Pause
+        exit 1
     }
 }
 

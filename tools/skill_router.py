@@ -1,27 +1,43 @@
 #!/usr/bin/env python
 import argparse
 import json
+import os
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
-import os
-import subprocess
 
 
-DEFAULT_MAX_SKILLS = 2
-MAX_SKILLS_CAP = 3
+DEFAULT_MAX_SKILLS = 3
+MAX_SKILLS_CAP = 8  # Match GEMINI.md tier system (complex tasks: 6-8 skills)
+MAX_TASK_LENGTH = 2000  # Prevent extremely long task text
 MIN_SCORE = 2
 RELATIVE_THRESHOLD = 0.7
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILLS_ROOT = REPO_ROOT / ".agent" / "skills"
 FEEDBACK_FILE = SKILLS_ROOT / ".router_feedback.json"
-BUNDLES = {
+BUNDLES_FILE = REPO_ROOT / "bundles.json"
+DEFAULT_BUNDLES = {
     "frontend": ["frontend-design", "ui-ux-pro-max", "react-best-practices"],
     "backend": ["backend-dev-guidelines", "api-patterns", "database-design"],
     "marketing": ["copywriting", "page-cro", "seo-audit"],
     "security": ["vulnerability-scanner", "security-review", "api-security-best-practices"],
     "product": ["ai-product", "product-requirements", "brainstorming"],
 }
+
+
+def load_bundles():
+    """Load bundles from JSON file or return defaults."""
+    if BUNDLES_FILE.exists():
+        try:
+            with BUNDLES_FILE.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                return data
+        except Exception:
+            pass
+    return DEFAULT_BUNDLES
 
 
 def normalize(text):
@@ -155,18 +171,40 @@ def run_intake(initial_task):
 
 
 def copy_to_clipboard(text):
-    if os.name != "nt":
-        return False
+    """Cross-platform clipboard copy."""
     try:
-        proc = subprocess.run(
-            ["powershell", "-NoProfile", "-Command", "Set-Clipboard -Value ([Console]::In.ReadToEnd())"],
-            input=text,
-            text=True,
-            capture_output=True,
-        )
-        return proc.returncode == 0
+        if os.name == "nt":
+            # Windows: use PowerShell
+            proc = subprocess.run(
+                ["powershell", "-NoProfile", "-Command", "Set-Clipboard -Value ([Console]::In.ReadToEnd())"],
+                input=text,
+                text=True,
+                capture_output=True,
+            )
+            return proc.returncode == 0
+        elif shutil.which("pbcopy"):
+            # macOS: use pbcopy
+            proc = subprocess.run(["pbcopy"], input=text.encode(), capture_output=True)
+            return proc.returncode == 0
+        elif shutil.which("xclip"):
+            # Linux: use xclip
+            proc = subprocess.run(
+                ["xclip", "-selection", "clipboard"],
+                input=text.encode(),
+                capture_output=True,
+            )
+            return proc.returncode == 0
+        elif shutil.which("xsel"):
+            # Linux fallback: use xsel
+            proc = subprocess.run(
+                ["xsel", "--clipboard", "--input"],
+                input=text.encode(),
+                capture_output=True,
+            )
+            return proc.returncode == 0
     except Exception:
-        return False
+        pass
+    return False
 
 
 def parse_args():
@@ -187,7 +225,7 @@ def parse_args():
     )
     parser.add_argument(
         "--bundle",
-        choices=sorted(BUNDLES.keys()),
+        choices=sorted(load_bundles().keys()),
         help="Use a preset skill bundle (frontend/backend/marketing/etc.)",
     )
     parser.add_argument(
@@ -236,11 +274,16 @@ def main():
         print("Error: task text is required.", file=sys.stderr)
         return 1
 
+    if len(task) > MAX_TASK_LENGTH:
+        print(f"Error: Task too long ({len(task)} chars). Maximum is {MAX_TASK_LENGTH} characters.", file=sys.stderr)
+        return 1
+
     if args.intake:
         task = run_intake(task)
 
     feedback = load_feedback()
-    bundle_set = set(BUNDLES.get(args.bundle or "", []))
+    bundles = load_bundles()
+    bundle_set = set(bundles.get(args.bundle or "", []))
     picked = pick_skills(skills, task, max_skills, feedback, bundle_set)
 
     if args.feedback:

@@ -1,0 +1,28 @@
+# Auto-detect text files and normalize line endings
+* text=auto
+
+# Windows scripts: CRLF
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Unix scripts: LF
+*.sh text eol=lf
+
+# Python: LF (cross-platform standard)
+*.py text eol=lf
+
+# Documentation: LF
+*.md text eol=lf
+*.txt text eol=lf
+
+# Config files: LF
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Keep binary files as-is
+*.zip binary
+*.png binary
+*.jpg binary
+*.svg binary

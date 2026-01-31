@@ -27,9 +27,14 @@ Runs in seconds. Opens a menu to choose "Essentials" (recommended) or "Full" mod
 ### 2. Usage
 Just tell it what you want to do in plain English.
 
-**From your terminal:**
+**From your terminal (Windows PowerShell):**
 ```powershell
 .\activate-skills.ps1 "Make a modern landing page"
+```
+
+**From your terminal (Linux/macOS):**
+```bash
+./activate-skills.sh "Make a modern landing page"
 ```
 
 **Inside Antigravity:**
@@ -43,7 +48,7 @@ Just tell it what you want to do in plain English.
 
 - **For Vibe Coders**: You rely on AI to build. This tool ensures your AI has the *exact* instructions it needs without you managing files manually.
 - **No Memorization**: Forget about "which skill do I need for SEO?". Just type "SEO" and let the Optimizer decide.
-- **Always Updated**: We pull the latest skills directly from the source.
+- **Always Current**: Running `.\setup.ps1` automatically updates your skills to the latest version.
 
 ---
 

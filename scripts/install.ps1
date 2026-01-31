@@ -20,33 +20,55 @@ function Ensure-SkillsRepo {
         return
     }
 
-    if (Test-Path $skillsIndex) {
-        Write-Host "Skills index found: $skillsIndex"
-        return
-    }
-
     $git = Get-Command git -ErrorAction SilentlyContinue
     if (-not $git) {
-        Write-Error "git is required to clone skills. Install git or clone manually to $skillsRoot."
+        Write-Error "git is required to clone/update skills. Install git or clone manually to $skillsRoot."
         exit 1
     }
 
+    # Check if skills repo already exists and is a git repo
+    $gitDir = Join-Path $skillsRoot ".git"
+    if ((Test-Path $skillsRoot) -and (Test-Path $gitDir)) {
+        # Skills exist - update them
+        Write-Host "Updating skills from upstream..."
+        Push-Location $skillsRoot
+        try {
+            $pullResult = git pull --ff-only 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                if ($pullResult -match "Already up to date") {
+                    Write-Host "Skills are already up to date."
+                } else {
+                    Write-Host "Skills updated successfully!"
+                    Write-Host $pullResult
+                }
+            } else {
+                Write-Warning "Could not update skills (git pull failed). Using existing version."
+                Write-Host $pullResult
+            }
+        } finally {
+            Pop-Location
+        }
+        return
+    }
+
+    # Skills don't exist or not a git repo - clone fresh
     if (Test-Path $skillsRoot) {
         if ($Force) {
             Write-Host "Removing existing skills directory: $skillsRoot"
             Remove-Item -Recurse -Force $skillsRoot
         } else {
-            Write-Error "Skills directory exists without skills_index.json: $skillsRoot (use -Force to replace)"
+            Write-Error "Skills directory exists but is not a git repo: $skillsRoot (use -Force to replace)"
             exit 1
         }
     }
 
-    Write-Host "Cloning skills repo to $skillsRoot"
+    Write-Host "Cloning skills repo to $skillsRoot..."
     git clone $SkillsRepo $skillsRoot
     if (-not (Test-Path $skillsIndex)) {
         Write-Error "skills_index.json not found after clone. Check the repo at $skillsRoot."
         exit 1
     }
+    Write-Host "Skills installed successfully!"
 }
 
 function Install-Workflow {

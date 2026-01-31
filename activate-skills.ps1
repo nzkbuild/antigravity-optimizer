@@ -14,4 +14,11 @@ if (-not (Test-Path $scriptPath)) {
     exit 1
 }
 
+# Check for Python availability
+$python = Get-Command python -ErrorAction SilentlyContinue
+if (-not $python) {
+    Write-Error "Python is required but not found in PATH. Please install Python 3.6+ from https://python.org"
+    exit 1
+}
+
 python $scriptPath @Task

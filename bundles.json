@@ -1,0 +1,39 @@
+{
+  "frontend": [
+    "frontend-design",
+    "ui-ux-pro-max",
+    "react-best-practices",
+    "web-accessibility"
+  ],
+  "backend": [
+    "backend-dev-guidelines",
+    "api-patterns",
+    "database-design"
+  ],
+  "marketing": [
+    "copywriting",
+    "page-cro",
+    "seo-audit"
+  ],
+  "security": [
+    "vulnerability-scanner",
+    "security-review",
+    "api-security-best-practices"
+  ],
+  "product": [
+    "ai-product",
+    "product-requirements",
+    "brainstorming"
+  ],
+  "fullstack": [
+    "frontend-design",
+    "backend-dev-guidelines",
+    "database-design",
+    "api-patterns"
+  ],
+  "devops": [
+    "infrastructure",
+    "ci-cd",
+    "monitoring"
+  ]
+}
