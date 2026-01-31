@@ -4,6 +4,9 @@
 # Router feedback
 .agent/skills/.router_feedback.json
 
+# Cache
+.cache/
+
 # Python
 __pycache__/
 *.pyc
@@ -15,6 +18,9 @@ Thumbs.db
 # Env
 .env
 .env.local
+
+# Skills update tracking
+.skills-update.json
 
 # Build artifacts
 dist/

@@ -16,28 +16,24 @@ The **Antigravity Optimizer** makes using AI skills effortless. It automatically
 
 ## 🚀 Quick Start
 
-**You don't need to be a coding expert.** We made a simple script to set everything up for you.
-
 ### 1. Setup
-Runs in seconds. Opens a menu to choose "Essentials" (recommended) or "Full" mode.
 ```powershell
 .\setup.ps1
 ```
 
 ### 2. Usage
-Just tell it what you want to do in plain English.
 
-**From your terminal (Windows PowerShell):**
+**Windows PowerShell:**
 ```powershell
 .\activate-skills.ps1 "Make a modern landing page"
 ```
 
-**From your terminal (Linux/macOS):**
+**Linux/macOS:**
 ```bash
 ./activate-skills.sh "Make a modern landing page"
 ```
 
-**Inside Antigravity:**
+**Inside Antigravity IDE:**
 ```
 /activate-skills Make a modern landing page
 ```
@@ -46,25 +42,15 @@ Just tell it what you want to do in plain English.
 
 ## 💡 Why use this?
 
-- **For Vibe Coders**: You rely on AI to build. This tool ensures your AI has the *exact* instructions it needs without you managing files manually.
-- **No Memorization**: Forget about "which skill do I need for SEO?". Just type "SEO" and let the Optimizer decide.
-- **Always Current**: Running `.\setup.ps1` automatically updates your skills to the latest version.
+- **For Vibe Coders**: AI has the exact instructions it needs without you managing files manually.
+- **No Memorization**: Just type what you want. Let the Optimizer pick the skills.
+- **Always Current**: Running `.\setup.ps1` automatically updates skills to latest.
 
 ---
 
-## ❤️ Credits & Attribution
-
-This project stands on the shoulders of giants.
+## ❤️ Credits
 
 **Primary Skills Library**: [Antigravity Awesome Skills](https://github.com/sickn33/antigravity-awesome-skills) by **sickn33**.
-*   Please star their repo!
-*   All skill definitions and markdown files are sourced from their incredible work.
-*   This repo (Optimizer) purely provides the *routing logic* to help you use those skills faster.
-
-## 🤝 Contributing
-
-If you want to improve the *router*, feel free to contribute here.
-If you have new *skills* to add, please contribute directly to [sickn33's repository](https://github.com/sickn33/antigravity-awesome-skills).
 
 ## 📄 License
 

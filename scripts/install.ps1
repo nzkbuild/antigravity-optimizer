@@ -1,5 +1,7 @@
 param(
     [string]$SkillsRepo = "https://github.com/sickn33/antigravity-awesome-skills.git",
+    [string]$SkillsRoot,
+    [string]$SkillsCache,
     [switch]$SkipSkills,
     [switch]$SkipWorkflow,
     [switch]$InstallGlobalRules,
@@ -8,8 +10,12 @@ param(
 )
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
-$skillsRoot = Join-Path $repoRoot ".agent\skills"
-$skillsIndex = Join-Path $skillsRoot "skills_index.json"
+$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE ".codex" }
+$skillsRoot = if ($SkillsRoot) { $SkillsRoot } elseif ($env:ANTIGRAVITY_SKILLS_ROOT) { $env:ANTIGRAVITY_SKILLS_ROOT } else { Join-Path $codexHome "skills" }
+$skillsCache = if ($SkillsCache) { $SkillsCache } else { Join-Path $repoRoot ".cache\antigravity-awesome-skills" }
+$skillsIndex = Join-Path $skillsCache "skills_index.json"
+$routerSkillSource = Join-Path $repoRoot "skills\activate-skills"
+$routerSkillDest = Join-Path $skillsRoot "activate-skills"
 $workflowDir = Join-Path $env:USERPROFILE ".gemini\antigravity\global_workflows"
 $workflowTarget = Join-Path $workflowDir "activate-skills.md"
 $templatePath = Join-Path $repoRoot "workflows\activate-skills.md"
@@ -22,53 +28,69 @@ function Ensure-SkillsRepo {
 
     $git = Get-Command git -ErrorAction SilentlyContinue
     if (-not $git) {
-        Write-Error "git is required to clone/update skills. Install git or clone manually to $skillsRoot."
+        Write-Error "git is required to clone/update skills. Install git or clone manually."
         exit 1
     }
 
-    # Check if skills repo already exists and is a git repo
-    $gitDir = Join-Path $skillsRoot ".git"
-    if ((Test-Path $skillsRoot) -and (Test-Path $gitDir)) {
-        # Skills exist - update them
-        Write-Host "Updating skills from upstream..."
-        Push-Location $skillsRoot
-        try {
-            $pullResult = git pull --ff-only 2>&1
-            if ($LASTEXITCODE -eq 0) {
-                if ($pullResult -match "Already up to date") {
-                    Write-Host "Skills are already up to date."
+    # Check if cache exists and is git repo - update it
+    if (Test-Path $skillsCache) {
+        if (Test-Path (Join-Path $skillsCache ".git")) {
+            Write-Host "Updating skills cache..."
+            Push-Location $skillsCache
+            try {
+                $pullResult = git pull --ff-only 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    if ($pullResult -match "Already up to date") {
+                        Write-Host "Skills cache is up to date."
+                    } else {
+                        Write-Host "Skills cache updated!"
+                    }
                 } else {
-                    Write-Host "Skills updated successfully!"
-                    Write-Host $pullResult
+                    Write-Warning "Could not update cache. Using existing version."
                 }
-            } else {
-                Write-Warning "Could not update skills (git pull failed). Using existing version."
-                Write-Host $pullResult
+            } finally {
+                Pop-Location
             }
-        } finally {
-            Pop-Location
-        }
-        return
-    }
-
-    # Skills don't exist or not a git repo - clone fresh
-    if (Test-Path $skillsRoot) {
-        if ($Force) {
-            Write-Host "Removing existing skills directory: $skillsRoot"
-            Remove-Item -Recurse -Force $skillsRoot
+        } elseif ($Force) {
+            Write-Host "Removing existing skills cache..."
+            Remove-Item -Recurse -Force $skillsCache
+            git clone $SkillsRepo $skillsCache
         } else {
-            Write-Error "Skills directory exists but is not a git repo: $skillsRoot (use -Force to replace)"
+            Write-Error "Skills cache exists but is not a git repo: $skillsCache (use -Force to replace)"
             exit 1
         }
+    } else {
+        Write-Host "Cloning skills repo..."
+        git clone $SkillsRepo $skillsCache
     }
 
-    Write-Host "Cloning skills repo to $skillsRoot..."
-    git clone $SkillsRepo $skillsRoot
     if (-not (Test-Path $skillsIndex)) {
-        Write-Error "skills_index.json not found after clone. Check the repo at $skillsRoot."
+        Write-Error "skills_index.json not found after clone. Check the repo at $skillsCache."
         exit 1
     }
-    Write-Host "Skills installed successfully!"
+
+    # Copy skills to destination
+    if (-not (Test-Path $skillsRoot)) {
+        New-Item -ItemType Directory -Path $skillsRoot | Out-Null
+    }
+
+    $skillsSourceDir = Join-Path $skillsCache "skills"
+    if (-not (Test-Path $skillsSourceDir)) {
+        Write-Error "Skills folder not found in repo: $skillsSourceDir"
+        exit 1
+    }
+
+    $skillDirs = Get-ChildItem -Path $skillsSourceDir -Directory
+    foreach ($skillDir in $skillDirs) {
+        $targetDir = Join-Path $skillsRoot $skillDir.Name
+        if (Test-Path $targetDir) {
+            Remove-Item -Recurse -Force $targetDir
+        }
+        Copy-Item -Path $skillDir.FullName -Destination $targetDir -Recurse
+    }
+
+    Copy-Item -Path $skillsIndex -Destination (Join-Path $skillsRoot "skills_index.json") -Force
+    Write-Host "Skills installed to: $skillsRoot"
 }
 
 function Install-Workflow {
@@ -83,17 +105,12 @@ function Install-Workflow {
 
     New-Item -ItemType Directory -Path $workflowDir -Force | Out-Null
 
-    if ((Test-Path $workflowTarget) -and -not $Force) {
-        Write-Host "Workflow already exists: $workflowTarget (use -Force to overwrite)"
-        return
-    }
-
     $template = Get-Content -Path $templatePath -Raw
     $template = $template -replace "\{\{REPO_ROOT\}\}", $repoRoot.Path
     try {
         Set-Content -Path $workflowTarget -Value $template
     } catch {
-        Write-Error "Failed to write workflow. Check permissions for $workflowDir or run PowerShell as admin."
+        Write-Error "Failed to write workflow. Check permissions for $workflowDir."
         exit 1
     }
 
@@ -134,9 +151,29 @@ If the router is unavailable, fall back to manual skill loading below.
     Write-Host "Created global rules: $globalRulesPath"
 }
 
+function Install-RouterSkill {
+    if (-not (Test-Path $routerSkillSource)) {
+        return
+    }
+
+    if (-not (Test-Path $skillsRoot)) {
+        New-Item -ItemType Directory -Path $skillsRoot | Out-Null
+    }
+
+    if (Test-Path $routerSkillDest) {
+        Remove-Item -Recurse -Force $routerSkillDest
+    }
+
+    Copy-Item -Path $routerSkillSource -Destination $routerSkillDest -Recurse
+    Write-Host "Installed Codex skill: activate-skills"
+
+    [Environment]::SetEnvironmentVariable("ANTIGRAVITY_OPTIMIZER_ROOT", $repoRoot.Path, "User")
+}
+
 Ensure-SkillsRepo
 Install-Workflow
 Install-GlobalRules
+Install-RouterSkill
 
 if ($AddPath) {
     $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")

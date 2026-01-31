@@ -66,7 +66,7 @@ After completing the task, briefly mention which skills were applied:
 ## Special Commands
 
 ### --verify
-Run `{{REPO_ROOT}}\activate-skills.cmd --verify` to check skill counts and integrity.
+Run `{{REPO_ROOT}}\activate-skills.ps1 --verify` to check skill counts and integrity.
 
 ### --bundle <name>
 Use a preset bundle (frontend, backend, marketing, security, product, fullstack, devops).
