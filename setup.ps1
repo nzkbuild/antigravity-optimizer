@@ -119,15 +119,18 @@ Show-Banner
 Write-Color "Welcome to the Antigravity Optimizer." $White
 Write-Color "This script installs skills and sets up Antigravity workflows." $White
 Write-Host ""
-Write-Color "Select Installation Mode:" $Cyan
+Write-Color "Select Mode:" $Cyan
 Write-Color "  [1] Essentials Only (Recommended)" $Green
 Write-Color "      - Installs skills & tools, removes extra files" $White
 Write-Host ""
 Write-Color "  [2] Full Repository" $Yellow
 Write-Color "      - Keeps all documentation and assets" $White
 Write-Host ""
+Write-Color "  [3] Update Skills Only" $Cyan
+Write-Color "      - Just check for and install skill updates (quick)" $White
+Write-Host ""
 
-$selection = Read-Host "Enter selection [1/2]"
+$selection = Read-Host "Enter selection [1/2/3]"
 
 switch ($selection) {
     "1" {
@@ -148,6 +151,15 @@ switch ($selection) {
         Write-Color ">> Selected: Full Repository" $Yellow
         Install-Skills
         Prompt-SetGlobalOptimizerRoot
+    }
+    "3" {
+        Write-Host ""
+        Write-Color ">> Selected: Update Skills Only" $Cyan
+        Install-Skills
+        Write-Host ""
+        Write-Color "[+] Skills update complete!" $Green
+        Pause
+        exit
     }
     Default {
         Write-Host ""
