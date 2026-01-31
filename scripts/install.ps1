@@ -69,7 +69,7 @@ function Ensure-SkillsRepo {
         exit 1
     }
 
-    # Copy skills to destination
+    # Copy skills to Codex folder
     if (-not (Test-Path $skillsRoot)) {
         New-Item -ItemType Directory -Path $skillsRoot | Out-Null
     }
@@ -91,6 +91,21 @@ function Ensure-SkillsRepo {
 
     Copy-Item -Path $skillsIndex -Destination (Join-Path $skillsRoot "skills_index.json") -Force
     Write-Host "Skills installed to: $skillsRoot"
+
+    # Also copy to .agent/skills in this repo (for Antigravity IDE)
+    $agentSkillsDir = Join-Path $repoRoot ".agent\skills"
+    if (-not (Test-Path $agentSkillsDir)) {
+        New-Item -ItemType Directory -Path $agentSkillsDir -Force | Out-Null
+    }
+    
+    # Copy skills folder
+    $agentSkillsSubDir = Join-Path $agentSkillsDir "skills"
+    if (Test-Path $agentSkillsSubDir) {
+        Remove-Item -Recurse -Force $agentSkillsSubDir
+    }
+    Copy-Item -Path $skillsSourceDir -Destination $agentSkillsSubDir -Recurse
+    Copy-Item -Path $skillsIndex -Destination (Join-Path $agentSkillsDir "skills_index.json") -Force
+    Write-Host "Skills also installed to: $agentSkillsDir"
 }
 
 function Install-Workflow {
