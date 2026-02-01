@@ -21,9 +21,9 @@ The **Antigravity Optimizer** automatically picks the right AI skills for your t
 ```
 
 Choose your mode:
-- **[1] Essentials** - Installs skills, removes extra docs
-- **[2] Full Repository** - Keeps everything  
-- **[3] Update Skills Only** - Quick update (2 seconds)
+- **[1] Essentials** - Installs everything, removes extra docs (recommended)
+- **[2] Full Repository** - Keeps all documentation  
+- **[3] Update Only** - Quick update (2 seconds)
 
 ### 2. Usage
 
@@ -42,9 +42,29 @@ Choose your mode:
 /activate-skills Build a landing page with dark mode
 ```
 
+**Inside Codex CLI:**
+```
+@activate-skills "Build a landing page with dark mode"
+```
+
 ---
 
 > 💡 **For Vibe Coders**: The setup script automatically removes the optimizer's `.git` folder. This keeps YOUR project's Git pointing to YOUR repo, not ours! No more accidental commits to the wrong place.
+
+---
+
+## 📦 What Gets Installed
+
+The optimizer installs **3 components**, not just skills:
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| **625+ Skills** | `~/.codex/skills/` | AI knowledge library for Codex CLI |
+| **625+ Skills** | `.agent/skills/` | Same skills for Antigravity IDE |
+| **Workflow** | `~/.gemini/.../activate-skills.md` | Enables `/activate-skills` command |
+| **Global Rules** | `~/.gemini/GEMINI.md` | Teaches AI how to use the router |
+
+All 3 work together to give you smart skill routing!
 
 ---
 
@@ -54,6 +74,8 @@ Choose your mode:
 |---------|-------------|
 | **625+ Skills** | Auto-updated from sickn33's library |
 | **Smart Routing** | Picks the best skills for your task |
+| **Global Workflow** | `/activate-skills` works in any project |
+| **Global Rules** | AI knows how to route automatically |
 | **Cross-Platform** | Windows, Linux, macOS |
 | **Auto-Update** | Run setup anytime to get latest skills |
 | **Dual Install** | Works in both Codex CLI and Antigravity IDE |
@@ -76,13 +98,21 @@ Edit `bundles.json` to customize.
 
 ---
 
-## 📦 Where Skills Go
+## 🛠️ Advanced Usage
 
-After setup, skills are installed to:
-- `~/.codex/skills/` - For Codex CLI
-- `.agent/skills/` - For Antigravity IDE
+```powershell
+# Silent install (for CI/CD)
+.\setup.ps1 -Mode essentials -Silent
 
-Both locations are automatically populated.
+# Update skills only
+.\setup.ps1 -Mode update
+
+# Get help
+Get-Help .\setup.ps1 -Full
+
+# Debug mode
+.\setup.ps1 -Verbose
+```
 
 ---
 
