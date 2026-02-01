@@ -44,6 +44,10 @@ Choose your mode:
 
 ---
 
+> 💡 **For Vibe Coders**: The setup script automatically removes the optimizer's `.git` folder. This keeps YOUR project's Git pointing to YOUR repo, not ours! No more accidental commits to the wrong place.
+
+---
+
 ## 💡 Features
 
 | Feature | Description |
