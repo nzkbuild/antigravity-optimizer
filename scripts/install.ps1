@@ -165,20 +165,57 @@ If the router is unavailable, fall back to manual skill loading below.
 
 "@
 
+    # Check if already installed
     if (Test-Path $globalRulesPath) {
         $content = Get-Content -Path $globalRulesPath -Raw
         if ($content -match "## Activate Skills Router \(Preferred\)") {
-            Write-Host "Global rules already contain Activate Skills Router section."
+            Write-Host "Global rules already contain Activate Skills Router section." -ForegroundColor Gray
             return
         }
-        Add-Content -Path $globalRulesPath -Value ("`r`n" + $rulesBlock)
-        Write-Host "Updated global rules: $globalRulesPath"
+    }
+
+    # Show user what we want to add
+    Write-Host ""
+    Write-Host "-----------------------------------------------------------" -ForegroundColor White
+    Write-Host "GLOBAL RULES UPDATE" -ForegroundColor Cyan
+    Write-Host "-----------------------------------------------------------" -ForegroundColor White
+    Write-Host ""
+    Write-Host "We'd like to add this to your global AI rules:" -ForegroundColor Yellow
+    Write-Host "Location: $globalRulesPath" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "--- What will be added ---" -ForegroundColor Cyan
+    Write-Host $rulesBlock -ForegroundColor White
+    Write-Host "--------------------------" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "This teaches AI to use /activate-skills automatically." -ForegroundColor White
+    Write-Host ""
+
+    $response = Read-Host "Add to global rules? [Y/n/skip]"
+    
+    if ($response -match "^[sS]") {
+        Write-Host "Skipped global rules. You can add them manually later." -ForegroundColor Gray
+        return
+    }
+    
+    if ($response -match "^[nN]") {
+        Write-Host "Skipped global rules." -ForegroundColor Gray
         return
     }
 
-    New-Item -ItemType Directory -Path (Split-Path $globalRulesPath) -Force | Out-Null
-    Set-Content -Path $globalRulesPath -Value $rulesBlock
-    Write-Host "Created global rules: $globalRulesPath"
+    # User approved (Y or Enter)
+    try {
+        if (Test-Path $globalRulesPath) {
+            Add-Content -Path $globalRulesPath -Value ("`r`n" + $rulesBlock)
+            Write-Host "[+] Updated global rules: $globalRulesPath" -ForegroundColor Green
+        } else {
+            New-Item -ItemType Directory -Path (Split-Path $globalRulesPath) -Force | Out-Null
+            Set-Content -Path $globalRulesPath -Value $rulesBlock
+            Write-Host "[+] Created global rules: $globalRulesPath" -ForegroundColor Green
+        }
+    }
+    catch {
+        Write-Host "[!] Failed to update global rules: $_" -ForegroundColor Red
+    }
 }
 
 function Install-RouterSkill {
