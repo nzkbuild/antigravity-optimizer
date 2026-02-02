@@ -75,7 +75,7 @@ function Ensure-SkillsRepo {
         Write-Error "Skills folder not found in repo: $skillsSourceDir"
         exit 1
     }
-    $skillCount = (Get-ChildItem -Path $skillsSourceDir -Directory).Count
+    $skillCount = (Get-Content $skillsIndex | ConvertFrom-Json).Count
 
     # Copy skills to Codex folder (only skills/ and skills_index.json - skip docs, assets, etc.)
     if (-not (Test-Path $skillsRoot)) {
