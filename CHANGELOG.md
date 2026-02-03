@@ -5,6 +5,23 @@ All notable changes to the Antigravity Optimizer will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-03
+
+### Added
+- **YAML auto-repair**: Automatically fixes broken skill files on install (both platforms)
+- **Python version check**: Router validates Python 3.6+ at startup
+- **Bundle validation**: Warns if bundle references non-existent skills
+- **Enhanced --verify**: Shows sync status with actionable recommendations
+
+### Changed
+- **Skill count display**: Changed from "625+" to "600+" for future-proofing
+- **YAML repair loop**: Now handles unlimited nested quotes (was limited to 4)
+- **Devops bundle**: Updated to use actual skill IDs from the index
+
+### Fixed
+- Linux/macOS missing YAML repair (now has parity with Windows)
+- Unicode symbols causing errors on Windows terminals
+
 ## [1.1.0] - 2026-02-02
 
 ### Added

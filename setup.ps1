@@ -38,7 +38,7 @@
     Quick skill update only.
 
 .NOTES
-    Version:        1.1.0
+    Version:        1.2.0
     Author:         nzkbuild
     Repository:     https://github.com/nzkbuild/antigravity-optimizer
     Credits:        Skills from @sickn33's Antigravity Awesome Skills
@@ -70,7 +70,7 @@ param(
 # CONFIGURATION
 # ============================================================================
 
-$script:Version = "1.1.0"
+$script:Version = "1.2.0"
 $script:StartTime = Get-Date
 $script:ExitCode = 0
 

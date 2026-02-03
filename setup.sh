@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Antigravity Optimizer Setup Script (Linux/macOS)
-# Version: 1.1.0
+# Version: 1.2.0
 #
 # Usage:
 #   ./setup.sh                    # Interactive setup
@@ -12,7 +12,7 @@
 
 set -e
 
-VERSION="1.1.0"
+VERSION="1.2.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS_REPO="https://github.com/sickn33/antigravity-awesome-skills.git"
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
