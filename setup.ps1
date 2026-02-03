@@ -95,9 +95,16 @@ function Write-Color {
         [string]$Text,
         
         [Parameter()]
-        [string]$Color = "White"
+        [string]$Color = "White",
+        
+        [Parameter()]
+        [switch]$NoNewline
     )
-    Write-Host $Text -ForegroundColor $Color
+    if ($NoNewline) {
+        Write-Host $Text -ForegroundColor $Color -NoNewline
+    } else {
+        Write-Host $Text -ForegroundColor $Color
+    }
 }
 
 function Write-Step {
@@ -403,7 +410,7 @@ function Show-Menu {
     Write-Host "Choose what to install:"
     Write-Host ""
     
-    Write-Color "  [1] Essentials " -NoNewline
+    Write-Color "  [1] Essentials " $script:Colors.White -NoNewline
     Write-Color "[RECOMMENDED]" $script:Colors.Yellow
     Write-Host "      What:     Skills + Tools only"
     Write-Host "      Keeps:    Skills, scripts, workflows"
