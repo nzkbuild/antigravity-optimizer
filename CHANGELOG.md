@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI badge**: Shows build status in README
 
 ### Changed
-- **Consistent prompts**: All prompts now use `[Y/n]` format (uppercase = default)
+- **Consistent prompts**: All prompts now use `[Y/N]` format
 - **Better UX**: Clear announcement before modifying global configs
 - **Installation choice**: Pick [1] Global, [2] Workspace only, or [3] Skip
 

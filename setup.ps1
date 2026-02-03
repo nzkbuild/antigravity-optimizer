@@ -251,7 +251,7 @@ function Set-GlobalOptimizerRoot {
     Write-Color "Make skills available everywhere?" $script:Colors.Cyan
     Write-Color "This stores the repo path so activate-skills works from any folder." $script:Colors.White
     
-    $response = Read-Host "Set ANTIGRAVITY_OPTIMIZER_ROOT permanently? [Y/n]"
+    $response = Read-Host "Set ANTIGRAVITY_OPTIMIZER_ROOT permanently? [Y/N]"
     
     if ($response -match "^[yY]$") {
         try {
@@ -410,7 +410,7 @@ try {
     switch ($selectedMode) {
         'essentials' {
             if (-not $Silent) {
-                $confirm = Read-Host "This will DELETE non-essential files. Continue? [Y/n]"
+                $confirm = Read-Host "This will DELETE non-essential files. Continue? [Y/N]"
                 if ($confirm -notmatch "^[yY]$") {
                     Write-Color "Aborted." $script:Colors.Red
                     exit 0
