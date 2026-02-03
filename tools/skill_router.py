@@ -73,13 +73,20 @@ def tokenize(text):
 
 
 def load_index(index_path):
-    with index_path.open("r", encoding="utf-8") as handle:
-        data = json.load(handle)
-    if isinstance(data, dict) and "skills" in data:
-        return data["skills"]
-    if isinstance(data, list):
-        return data
-    return []
+    try:
+        with index_path.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+        if isinstance(data, dict) and "skills" in data:
+            return data["skills"]
+        if isinstance(data, list):
+            return data
+        return []
+    except json.JSONDecodeError as e:
+        print(f"Error: Invalid JSON in skills_index.json: {e}", file=sys.stderr)
+        return []
+    except Exception as e:
+        print(f"Error: Failed to load skills index: {e}", file=sys.stderr)
+        return []
 
 
 def load_feedback():
@@ -266,7 +273,7 @@ def parse_args():
 def main():
     args = parse_args()
     max_skills = max(1, min(args.max, MAX_SKILLS_CAP))
-    task = " ".join(args.task).strip()
+    task = " ".join(args.task or []).strip()
 
     index_path = SKILLS_ROOT / "skills_index.json"
     if not index_path.exists():
@@ -274,6 +281,10 @@ def main():
         return 1
 
     skills = load_index(index_path)
+    if not skills:
+        print("Error: No skills found in index. Run setup.ps1 to install skills.", file=sys.stderr)
+        return 1
+    
     if args.verify:
         skills_dir = SKILLS_ROOT / "skills"
         if not skills_dir.exists():

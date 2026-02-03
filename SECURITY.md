@@ -14,7 +14,7 @@ We take security seriously. If you discover a security vulnerability, please fol
 
 1. **Do NOT open a public issue** - Security vulnerabilities should be reported privately.
 
-2. **Email**: Send details to **security@nzkbuild.dev** (or open a private security advisory on GitHub)
+2. **Email**: Send details to **<nbzkri@gmail.com>** (or open a private security advisory on GitHub)
 
 3. **Include**:
    - Description of the vulnerability
@@ -34,6 +34,7 @@ We take security seriously. If you discover a security vulnerability, please fol
 ### Scope
 
 This security policy covers:
+
 - The skill router (`tools/skill_router.py`)
 - Installation scripts (`setup.ps1`, `scripts/install.ps1`)
 - CLI wrappers (`activate-skills.ps1`, `.cmd`, `.sh`)
@@ -47,6 +48,7 @@ This security policy covers:
 ## Security Best Practices
 
 When using the Antigravity Optimizer:
+
 - Always review installed skills before using them
 - Don't run `setup.ps1` with elevated privileges unless necessary
 - Keep Python updated to the latest stable version
