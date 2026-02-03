@@ -150,7 +150,8 @@ install_workflow() {
     mkdir -p "$WORKFLOW_DIR"
     
     if [ -f "$SCRIPT_DIR/workflows/activate-skills.md" ]; then
-        sed "s|{{REPO_ROOT}}|$SCRIPT_DIR|g" "$SCRIPT_DIR/workflows/activate-skills.md" > "$WORKFLOW_DIR/activate-skills.md"
+        # Copy template as-is (no path replacement needed - template is now dynamic)
+        cp "$SCRIPT_DIR/workflows/activate-skills.md" "$WORKFLOW_DIR/activate-skills.md"
         log_step success "Workflow installed: $WORKFLOW_DIR/activate-skills.md"
     fi
 }
@@ -221,7 +222,7 @@ If the router is unavailable, fall back to manual skill loading below.
 cleanup_essentials() {
     log_step progress "Cleaning up for Essentials Mode..."
     
-    KEEP_LIST=".agent .cache .gitignore .gitattributes assets scripts tools workflows activate-skills.ps1 activate-skills.sh setup.ps1 setup.sh bundles.json LICENSE README.md"
+    KEEP_LIST=".agent .cache .gitignore .gitattributes assets scripts tools workflows activate-skills.cmd activate-skills.ps1 activate-skills.sh setup.ps1 setup.sh bundles.json LICENSE README.md"
     
     for item in "$SCRIPT_DIR"/*; do
         name=$(basename "$item")

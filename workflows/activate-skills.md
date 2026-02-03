@@ -8,7 +8,7 @@ You are an intelligent skill router. When the user invokes `/activate-skills <ta
 
 ## Usage
 
-```
+```text
 /activate-skills <task description>
 /activate-skills --bundle frontend <task>
 /activate-skills --verify
@@ -48,7 +48,7 @@ Execute the skill router to get recommended skills:
 
 The router outputs something like:
 
-```
+```text
 /frontend-design /ui-ux-pro-max /page-cro
 Build a modern landing page
 ```
@@ -82,7 +82,7 @@ Combine insights from all loaded skills to deliver a high-quality result.
 
 After completing the task, briefly mention which skills were applied:
 
-```
+```text
 ✅ Task completed using: frontend-design, ui-ux-pro-max, page-cro
 ```
 
@@ -92,9 +92,11 @@ After completing the task, briefly mention which skills were applied:
 
 Run `activate-skills.ps1 --verify` to check skill counts and integrity.
 
-### --bundle <name>
+### --bundle
 
 Use a preset bundle (frontend, backend, marketing, security, product, fullstack, devops).
+
+Example: `--bundle frontend` loads all frontend-related skills.
 
 ## Error Handling
 

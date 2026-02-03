@@ -16,34 +16,46 @@ The **Antigravity Optimizer** automatically picks the right AI skills for your t
 ## 🚀 Quick Start
 
 ### 1. Setup
+
 ```powershell
 .\setup.ps1
 ```
 
 Choose your mode:
+
 - **[1] Essentials** - Installs everything, removes extra docs (recommended)
 - **[2] Full Repository** - Keeps all documentation  
 - **[3] Update Only** - Quick update (2 seconds)
 
 ### 2. Usage
 
-**Windows PowerShell:**
+**Windows (CMD):**
+
+```cmd
+.\activate-skills.cmd "Build a landing page with dark mode"
+```
+
+**Windows (PowerShell):**
+
 ```powershell
 .\activate-skills.ps1 "Build a landing page with dark mode"
 ```
 
 **Linux/macOS:**
+
 ```bash
 ./activate-skills.sh "Build a landing page with dark mode"
 ```
 
 **Inside Antigravity IDE:**
-```
+
+```text
 /activate-skills Build a landing page with dark mode
 ```
 
 **Inside Codex CLI:**
-```
+
+```text
 @activate-skills "Build a landing page with dark mode"
 ```
 
@@ -58,7 +70,7 @@ Choose your mode:
 The optimizer installs **3 components**, not just skills:
 
 | Component | Location | Purpose |
-|-----------|----------|---------|
+| --------- | -------- | ------- |
 | **625+ Skills** | `~/.codex/skills/` | AI knowledge library for Codex CLI |
 | **625+ Skills** | `.agent/skills/` | Same skills for Antigravity IDE |
 | **Workflow** | `~/.gemini/.../activate-skills.md` | Enables `/activate-skills` command |
@@ -71,7 +83,7 @@ All 3 work together to give you smart skill routing!
 ## 💡 Features
 
 | Feature | Description |
-|---------|-------------|
+| ------- | ----------- |
 | **625+ Skills** | Auto-updated from sickn33's library |
 | **Smart Routing** | Picks the best skills for your task |
 | **Global Workflow** | `/activate-skills` works in any project |
@@ -86,6 +98,7 @@ All 3 work together to give you smart skill routing!
 ## 🔧 Bundles
 
 Use preset skill bundles:
+
 ```powershell
 .\activate-skills.ps1 --bundle frontend "Build a pricing page"
 .\activate-skills.ps1 --bundle backend "Create a REST API"
