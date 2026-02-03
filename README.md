@@ -5,7 +5,6 @@
 **Stop memorizing skills. Just build.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
-[![CI](https://github.com/nzkbuild/antigravity-optimizer/actions/workflows/ci.yml/badge.svg)](https://github.com/nzkbuild/antigravity-optimizer/actions/workflows/ci.yml)
 [![GitHub stars](https://img.shields.io/github/stars/nzkbuild/antigravity-optimizer?style=social)](https://github.com/nzkbuild/antigravity-optimizer)
 
 The **Antigravity Optimizer** automatically picks the right AI skills for your task. 600+ skills, zero memorization.
