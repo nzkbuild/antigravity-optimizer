@@ -273,6 +273,23 @@ def parse_args():
         action="store_true",
         help="Disable auto-copy to clipboard",
     )
+    parser.add_argument(
+        "--list-bundles",
+        action="store_true",
+        help="List all available skill bundles",
+    )
+    parser.add_argument(
+        "--search",
+        type=str,
+        metavar="KEYWORD",
+        help="Search skills by keyword in name/description",
+    )
+    parser.add_argument(
+        "--info",
+        type=str,
+        metavar="SKILL_ID",
+        help="Show detailed information about a specific skill",
+    )
     return parser.parse_args()
 
 
@@ -290,6 +307,91 @@ def main():
     if not skills:
         print("Error: No skills found in index. Run setup.ps1 to install skills.", file=sys.stderr)
         return 1
+    
+    # Handle --list-bundles
+    if args.list_bundles:
+        bundles = load_bundles()
+        print("=" * 50)
+        print("AVAILABLE SKILL BUNDLES")
+        print("=" * 50)
+        for bundle_name, bundle_skills in sorted(bundles.items()):
+            print(f"\n{bundle_name}:")
+            for skill in bundle_skills:
+                print(f"  - {skill}")
+        print()
+        print(f"Usage: activate-skills --bundle <name> \"your task\"")
+        print("=" * 50)
+        return 0
+    
+    # Handle --search
+    if args.search:
+        keyword = args.search.lower()
+        matches = []
+        for skill in skills:
+            skill_id = skill.get("id") or skill.get("name") or ""
+            desc = skill.get("description") or ""
+            if keyword in skill_id.lower() or keyword in desc.lower():
+                matches.append(skill)
+        
+        print("=" * 50)
+        print(f"SEARCH RESULTS: '{args.search}'")
+        print("=" * 50)
+        if matches:
+            print(f"Found {len(matches)} skills:\n")
+            for skill in matches[:20]:  # Limit to 20 results
+                skill_id = skill.get("id") or skill.get("name") or "unknown"
+                desc = skill.get("description") or "No description"
+                # Truncate description
+                if len(desc) > 60:
+                    desc = desc[:57] + "..."
+                print(f"  {skill_id}")
+                print(f"    {desc}\n")
+            if len(matches) > 20:
+                print(f"  ... and {len(matches) - 20} more")
+        else:
+            print("No skills found matching that keyword.")
+        print("=" * 50)
+        return 0
+    
+    # Handle --info
+    if args.info:
+        skill_id = args.info.lower()
+        found = None
+        for skill in skills:
+            sid = (skill.get("id") or skill.get("name") or "").lower()
+            if sid == skill_id:
+                found = skill
+                break
+        
+        if not found:
+            print(f"Error: Skill '{args.info}' not found.", file=sys.stderr)
+            print("Use --search to find skills.", file=sys.stderr)
+            return 1
+        
+        print("=" * 50)
+        print("SKILL INFORMATION")
+        print("=" * 50)
+        print(f"  ID:          {found.get('id') or found.get('name')}")
+        print(f"  Name:        {found.get('name', 'N/A')}")
+        print(f"  Category:    {found.get('category', 'N/A')}")
+        print(f"  Risk:        {found.get('risk', 'N/A')}")
+        print(f"  Source:      {found.get('source', 'N/A')}")
+        print(f"  Path:        {found.get('path', 'N/A')}")
+        print()
+        print("  Description:")
+        desc = found.get('description', 'No description available.')
+        # Word wrap description
+        words = desc.split()
+        line = "    "
+        for word in words:
+            if len(line) + len(word) > 70:
+                print(line)
+                line = "    "
+            line += word + " "
+        if line.strip():
+            print(line)
+        print("=" * 50)
+        return 0
     
     if args.verify:
         skills_dir = SKILLS_ROOT / "skills"

@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      
+      - name: Validate JSON files
+        run: |
+          python -c "import json; json.load(open('bundles.json'))"
+          echo "bundles.json: OK"
+      
+      - name: Test skill router help
+        run: |
+          python tools/skill_router.py --help
+      
+      - name: Test list-bundles
+        run: |
+          python tools/skill_router.py --list-bundles
+      
+      - name: Validate PowerShell syntax
+        run: |
+          pwsh -NoProfile -Command "Get-ChildItem *.ps1,scripts/*.ps1 | ForEach-Object { 
+            \$null = [System.Management.Automation.Language.Parser]::ParseFile(\$_.FullName, [ref]\$null, [ref]\$errors)
+            if (\$errors) { Write-Error \"Syntax errors in \$(\$_.Name)\"; exit 1 }
+            Write-Host \"\$(\$_.Name): OK\"
+          }"

@@ -168,47 +168,56 @@ If the router is unavailable, fall back to manual skill loading below.
         }
     }
 
-    # Show user what we want to add
+    # Show clear announcement
     Write-Host ""
-    Write-Host "-----------------------------------------------------------" -ForegroundColor White
-    Write-Host "GLOBAL RULES UPDATE" -ForegroundColor Cyan
-    Write-Host "-----------------------------------------------------------" -ForegroundColor White
+    Write-Host "===========================================================" -ForegroundColor Cyan
+    Write-Host "  WORKFLOW & RULES INSTALLATION" -ForegroundColor White
+    Write-Host "===========================================================" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "We'd like to add this to your global AI rules:" -ForegroundColor Yellow
-    Write-Host "Location: $globalRulesPath" -ForegroundColor Gray
+    Write-Host "  The optimizer can install workflow rules to help AI use" -ForegroundColor White
+    Write-Host "  /activate-skills automatically." -ForegroundColor White
     Write-Host ""
-    Write-Host "--- What will be added ---" -ForegroundColor Cyan
-    Write-Host $rulesBlock -ForegroundColor White
-    Write-Host "--------------------------" -ForegroundColor Cyan
+    Write-Host "  Choose where to install:" -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "This teaches AI to use /activate-skills automatically." -ForegroundColor White
+    Write-Host "  [1] Global (all projects) - ~/.gemini/GEMINI.md" -ForegroundColor Green
+    Write-Host "  [2] Workspace only - ./.gemini/GEMINI.md" -ForegroundColor Cyan
+    Write-Host "  [3] Skip - Don't install rules" -ForegroundColor Gray
     Write-Host ""
-
-    $response = Read-Host "Add to global rules? [Y/n/skip]"
     
-    if ($response -match "^[sS]") {
-        Write-Host "Skipped global rules. You can add them manually later." -ForegroundColor Gray
-        return
-    }
+    $choice = Read-Host "  Enter choice [1/2/3]"
     
-    if ($response -match "^[nN]") {
-        Write-Host "Skipped global rules." -ForegroundColor Gray
-        return
+    switch ($choice) {
+        "1" {
+            # Global install
+            $targetPath = $globalRulesPath
+        }
+        "2" {
+            # Workspace install
+            $targetPath = Join-Path $repoRoot ".gemini\GEMINI.md"
+        }
+        default {
+            Write-Host "[i] Skipped rules installation." -ForegroundColor Gray
+            return
+        }
     }
 
-    # User approved (Y or Enter)
+    # Install to chosen location
     try {
-        if (Test-Path $globalRulesPath) {
-            Add-Content -Path $globalRulesPath -Value ("`r`n" + $rulesBlock)
-            Write-Host "[+] Updated global rules: $globalRulesPath" -ForegroundColor Green
+        $targetDir = Split-Path $targetPath
+        if (-not (Test-Path $targetDir)) {
+            New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+        }
+        
+        if (Test-Path $targetPath) {
+            Add-Content -Path $targetPath -Value ("`r`n" + $rulesBlock)
+            Write-Host "[+] Updated: $targetPath" -ForegroundColor Green
         } else {
-            New-Item -ItemType Directory -Path (Split-Path $globalRulesPath) -Force | Out-Null
-            Set-Content -Path $globalRulesPath -Value $rulesBlock
-            Write-Host "[+] Created global rules: $globalRulesPath" -ForegroundColor Green
+            Set-Content -Path $targetPath -Value $rulesBlock
+            Write-Host "[+] Created: $targetPath" -ForegroundColor Green
         }
     }
     catch {
-        Write-Host "[!] Failed to update global rules: $_" -ForegroundColor Red
+        Write-Host "[!] Failed to update rules: $_" -ForegroundColor Red
     }
 }
 

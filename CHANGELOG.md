@@ -5,6 +5,21 @@ All notable changes to the Antigravity Optimizer will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-02-03
+
+### Added
+- **Skill discovery commands**: `--search`, `--info`, `--list-bundles`
+- **Global/Workspace choice**: Choose where to install workflow rules
+- **GitHub Actions CI**: Validates JSON and PowerShell syntax on push
+- **Issue templates**: Bug report and feature request forms
+- **PR template**: Checklist for contributors
+- **CI badge**: Shows build status in README
+
+### Changed
+- **Consistent prompts**: All prompts now use `[Y/n]` format (uppercase = default)
+- **Better UX**: Clear announcement before modifying global configs
+- **Installation choice**: Pick [1] Global, [2] Workspace only, or [3] Skip
+
 ## [1.2.0] - 2026-02-03
 
 ### Added

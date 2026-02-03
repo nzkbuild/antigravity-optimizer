@@ -5,6 +5,7 @@
 **Stop memorizing skills. Just build.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
+[![CI](https://github.com/nzkbuild/antigravity-optimizer/actions/workflows/ci.yml/badge.svg)](https://github.com/nzkbuild/antigravity-optimizer/actions/workflows/ci.yml)
 [![GitHub stars](https://img.shields.io/github/stars/nzkbuild/antigravity-optimizer?style=social)](https://github.com/nzkbuild/antigravity-optimizer)
 
 The **Antigravity Optimizer** automatically picks the right AI skills for your task. 600+ skills, zero memorization.
@@ -125,6 +126,24 @@ Get-Help .\setup.ps1 -Full
 
 # Debug mode
 .\setup.ps1 -Verbose
+```
+
+---
+
+## 🔍 Skill Discovery
+
+```powershell
+# Search skills by keyword
+python tools/skill_router.py --search react
+
+# View skill details
+python tools/skill_router.py --info brainstorming
+
+# List all bundles
+python tools/skill_router.py --list-bundles
+
+# Verify installation
+python tools/skill_router.py --verify
 ```
 
 ---

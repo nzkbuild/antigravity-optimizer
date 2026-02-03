@@ -38,7 +38,7 @@
     Quick skill update only.
 
 .NOTES
-    Version:        1.2.0
+    Version:        1.3.0
     Author:         nzkbuild
     Repository:     https://github.com/nzkbuild/antigravity-optimizer
     Credits:        Skills from @sickn33's Antigravity Awesome Skills
@@ -70,7 +70,7 @@ param(
 # CONFIGURATION
 # ============================================================================
 
-$script:Version = "1.2.0"
+$script:Version = "1.3.0"
 $script:StartTime = Get-Date
 $script:ExitCode = 0
 
@@ -251,7 +251,7 @@ function Set-GlobalOptimizerRoot {
     Write-Color "Make skills available everywhere?" $script:Colors.Cyan
     Write-Color "This stores the repo path so activate-skills works from any folder." $script:Colors.White
     
-    $response = Read-Host "Set ANTIGRAVITY_OPTIMIZER_ROOT permanently? [y/N]"
+    $response = Read-Host "Set ANTIGRAVITY_OPTIMIZER_ROOT permanently? [Y/n]"
     
     if ($response -match "^[yY]$") {
         try {
@@ -410,7 +410,7 @@ try {
     switch ($selectedMode) {
         'essentials' {
             if (-not $Silent) {
-                $confirm = Read-Host "This will DELETE non-essential files. Continue? [y/N]"
+                $confirm = Read-Host "This will DELETE non-essential files. Continue? [Y/n]"
                 if ($confirm -notmatch "^[yY]$") {
                     Write-Color "Aborted." $script:Colors.Red
                     exit 0

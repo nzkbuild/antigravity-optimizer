@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Antigravity Optimizer Setup Script (Linux/macOS)
-# Version: 1.2.0
+# Version: 1.3.0
 #
 # Usage:
 #   ./setup.sh                    # Interactive setup
@@ -12,7 +12,7 @@
 
 set -e
 
-VERSION="1.2.0"
+VERSION="1.3.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS_REPO="https://github.com/sickn33/antigravity-awesome-skills.git"
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
@@ -234,47 +234,51 @@ If the router is unavailable, fall back to manual skill loading below.
         fi
     fi
     
-    # Show user what we want to add
+    # Show clear announcement
     echo ""
-    echo "-----------------------------------------------------------"
-    echo -e "${CYAN}GLOBAL RULES UPDATE${NC}"
-    echo "-----------------------------------------------------------"
+    echo -e "${CYAN}===========================================================${NC}"
+    echo -e "  WORKFLOW & RULES INSTALLATION"
+    echo -e "${CYAN}===========================================================${NC}"
     echo ""
-    echo -e "${YELLOW}We'd like to add this to your global AI rules:${NC}"
-    echo -e "${GRAY}Location: $GLOBAL_RULES_PATH${NC}"
+    echo "  The optimizer can install workflow rules to help AI use"
+    echo "  /activate-skills automatically."
     echo ""
-    echo -e "${CYAN}--- What will be added ---${NC}"
-    echo "$RULES_BLOCK"
-    echo -e "${CYAN}--------------------------${NC}"
+    echo -e "${YELLOW}  Choose where to install:${NC}"
     echo ""
-    echo "This teaches AI to use /activate-skills automatically."
+    echo -e "${GREEN}  [1] Global (all projects) - ~/.gemini/GEMINI.md${NC}"
+    echo -e "${CYAN}  [2] Workspace only - ./.gemini/GEMINI.md${NC}"
+    echo -e "${GRAY}  [3] Skip - Don't install rules${NC}"
     echo ""
     
     if [ "$SILENT" = true ]; then
-        response="y"
+        choice="1"
     else
-        read -p "Add to global rules? [Y/n/skip] " response
+        read -p "  Enter choice [1/2/3]: " choice
     fi
     
-    case "$response" in
-        [sS]*) 
-            log_step info "Skipped global rules."
-            return
+    case "$choice" in
+        1)
+            target_path="$GLOBAL_RULES_PATH"
             ;;
-        [nN]*) 
-            log_step info "Skipped global rules."
+        2)
+            target_path="$SCRIPT_DIR/.gemini/GEMINI.md"
+            ;;
+        *)
+            log_step info "Skipped rules installation."
             return
             ;;
     esac
     
-    # User approved
-    mkdir -p "$GEMINI_DIR"
-    if [ -f "$GLOBAL_RULES_PATH" ]; then
-        echo -e "\n$RULES_BLOCK" >> "$GLOBAL_RULES_PATH"
+    # Install to chosen location
+    target_dir=$(dirname "$target_path")
+    mkdir -p "$target_dir"
+    
+    if [ -f "$target_path" ]; then
+        echo -e "\n$RULES_BLOCK" >> "$target_path"
     else
-        echo "$RULES_BLOCK" > "$GLOBAL_RULES_PATH"
+        echo "$RULES_BLOCK" > "$target_path"
     fi
-    log_step success "Updated global rules: $GLOBAL_RULES_PATH"
+    log_step success "Updated: $target_path"
 }
 
 cleanup_essentials() {
