@@ -73,6 +73,7 @@ param(
 $script:Version = "1.3.2"
 $script:StartTime = Get-Date
 $script:ExitCode = 0
+$script:RepoRoot = $PSScriptRoot
 
 # Colors
 $script:Colors = @{
