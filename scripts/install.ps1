@@ -146,7 +146,11 @@ function Install-GlobalRules {
         return
     }
 
+<<<<<<< HEAD
     $version = "1.3.1"
+=======
+    $version = "1.3.2"
+>>>>>>> f82ffdc (fix: replace unicode emojis with ASCII-safe text for PowerShell compatibility - Bump version to 1.3.2)
     $rulesBlock = @"
 <!-- ANTIGRAVITY_OPTIMIZER_VERSION: $version -->
 ## Activate Skills Router (Preferred)
@@ -189,7 +193,11 @@ If the router is unavailable, fall back to manual skill loading below.
     if ($globalExists -and $workspaceExists) {
         Write-Host ""
         Write-Host "===========================================================" -ForegroundColor Yellow
+<<<<<<< HEAD
         Write-Host "  ⚠️  CONFLICT DETECTED" -ForegroundColor Yellow
+=======
+        Write-Host "  [!] CONFLICT DETECTED" -ForegroundColor Yellow
+>>>>>>> f82ffdc (fix: replace unicode emojis with ASCII-safe text for PowerShell compatibility - Bump version to 1.3.2)
         Write-Host "===========================================================" -ForegroundColor Yellow
         Write-Host ""
         Write-Host "  You have configuration files in BOTH locations:" -ForegroundColor White
@@ -202,8 +210,13 @@ If the router is unavailable, fall back to manual skill loading below.
         Write-Host "    Global instructions will take priority."
         Write-Host ""
         Write-Host "  Recommendation:" -ForegroundColor Yellow
+<<<<<<< HEAD
         Write-Host "    • Keep global if you want consistency everywhere"
         Write-Host "    • Delete global if you want per-project control"
+=======
+        Write-Host "    - Keep global if you want consistency everywhere"
+        Write-Host "    - Delete global if you want per-project control"
+>>>>>>> f82ffdc (fix: replace unicode emojis with ASCII-safe text for PowerShell compatibility - Bump version to 1.3.2)
         Write-Host ""
         $response = Read-Host "  Continue anyway? [Y/N]"
         if ($response -notmatch "^[yY]$") {
@@ -226,7 +239,11 @@ If the router is unavailable, fall back to manual skill loading below.
     
     Write-Host "  [1] " -NoNewline -ForegroundColor Green
     Write-Host "Global - All Your Projects " -NoNewline
+<<<<<<< HEAD
     Write-Host "⭐ RECOMMENDED" -ForegroundColor Yellow
+=======
+    Write-Host "[RECOMMENDED]" -ForegroundColor Yellow
+>>>>>>> f82ffdc (fix: replace unicode emojis with ASCII-safe text for PowerShell compatibility - Bump version to 1.3.2)
     Write-Host "      AI File:  $globalRulesPath" -ForegroundColor Gray
     Write-Host "      Effect:   /activate-skills works in ALL projects"
     Write-Host "      Use when: Your personal computer"

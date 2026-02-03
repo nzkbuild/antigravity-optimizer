@@ -57,7 +57,11 @@ Build a modern landing page
 
 Extract the skill IDs from the first line (the ones starting with `/`).
 
+<<<<<<< HEAD
 Example: `/frontend-design /ui-ux-pro-max /page-cro` → skills = ["frontend-design", "ui-ux-pro-max", "page-cro"]
+=======
+Example: `/frontend-design /ui-ux-pro-max /page-cro` => skills = ["frontend-design", "ui-ux-pro-max", "page-cro"]
+>>>>>>> f82ffdc (fix: replace unicode emojis with ASCII-safe text for PowerShell compatibility - Bump version to 1.3.2)
 
 ### Step 4: Load Each Skill
 
@@ -83,7 +87,11 @@ Combine insights from all loaded skills to deliver a high-quality result.
 After completing the task, briefly mention which skills were applied:
 
 ```text
+<<<<<<< HEAD
 ✅ Task completed using: frontend-design, ui-ux-pro-max, page-cro
+=======
+[OK] Task completed using: frontend-design, ui-ux-pro-max, page-cro
+>>>>>>> f82ffdc (fix: replace unicode emojis with ASCII-safe text for PowerShell compatibility - Bump version to 1.3.2)
 ```
 
 ## Special Commands

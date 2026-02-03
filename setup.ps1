@@ -38,7 +38,11 @@
     Quick skill update only.
 
 .NOTES
+<<<<<<< HEAD
     Version:        1.3.1
+=======
+    Version:        1.3.2
+>>>>>>> f82ffdc (fix: replace unicode emojis with ASCII-safe text for PowerShell compatibility - Bump version to 1.3.2)
     Author:         nzkbuild
     Repository:     https://github.com/nzkbuild/antigravity-optimizer
     Credits:        Skills from @sickn33's Antigravity Awesome Skills
@@ -70,7 +74,11 @@ param(
 # CONFIGURATION
 # ============================================================================
 
+<<<<<<< HEAD
 $script:Version = "1.3.1"
+=======
+$script:Version = "1.3.2"
+>>>>>>> f82ffdc (fix: replace unicode emojis with ASCII-safe text for PowerShell compatibility - Bump version to 1.3.2)
 $script:StartTime = Get-Date
 $script:ExitCode = 0
 
@@ -95,9 +103,22 @@ function Write-Color {
         [string]$Text,
         
         [Parameter()]
+<<<<<<< HEAD
         [string]$Color = "White"
     )
     Write-Host $Text -ForegroundColor $Color
+=======
+        [string]$Color = "White",
+        
+        [Parameter()]
+        [switch]$NoNewline
+    )
+    if ($NoNewline) {
+        Write-Host $Text -ForegroundColor $Color -NoNewline
+    } else {
+        Write-Host $Text -ForegroundColor $Color
+    }
+>>>>>>> f82ffdc (fix: replace unicode emojis with ASCII-safe text for PowerShell compatibility - Bump version to 1.3.2)
 }
 
 function Write-Step {
@@ -157,6 +178,7 @@ function Show-WhatGetsInstalled {
     Write-Host ""
     
     Write-Color "What gets installed?" $script:Colors.Yellow
+<<<<<<< HEAD
     Write-Host "  +-----------------------------------------------------+"
     Write-Host "  | " -NoNewline
     Write-Color "📚 626 Skills" $script:Colors.Cyan -NoNewline
@@ -177,6 +199,28 @@ function Show-WhatGetsInstalled {
     Write-Host "  |    Teaches AI how to use the skills                 |"
     Write-Host "  |    -> You choose: Global or Workspace only          |"
     Write-Host "  +-----------------------------------------------------+"
+=======
+    Write-Host ""
+    Write-Host "  " -NoNewline
+    Write-Color "[1] 626 Skills" $script:Colors.Cyan
+    Write-Host "      AI expertise library (React, Python, DevOps, etc.)"
+    Write-Host "      Location: ~/.codex/skills + ./.agent/skills" -ForegroundColor DarkGray
+    Write-Host ""
+    
+    Write-Host "  " -NoNewline
+    Write-Color "[2] /activate-skills Command" $script:Colors.Cyan
+    Write-Host "      Global workflow for automatic skill routing"
+    Write-Host "      Location: ~/.gemini/global_workflows/" -ForegroundColor DarkGray
+    Write-Host ""
+    
+    Write-Host "  " -NoNewline
+    Write-Color "[3] AI Instructions (Optional)" $script:Colors.Cyan
+    Write-Host "      Teaches AI how to use the optimizer"
+    Write-Host "      Location: You choose (Global or Workspace only)" -ForegroundColor DarkGray
+    Write-Host ""
+    
+    Write-Host "-----------------------------------------------------------" -ForegroundColor DarkGray
+>>>>>>> f82ffdc (fix: replace unicode emojis with ASCII-safe text for PowerShell compatibility - Bump version to 1.3.2)
     Write-Host ""
     
     if (-not $Silent) {
@@ -404,7 +448,11 @@ function Show-Menu {
     Write-Host ""
     
     Write-Color "  [1] Essentials " -NoNewline
+<<<<<<< HEAD
     Write-Color "⭐ RECOMMENDED" $script:Colors.Yellow
+=======
+    Write-Color "[RECOMMENDED]" $script:Colors.Yellow
+>>>>>>> f82ffdc (fix: replace unicode emojis with ASCII-safe text for PowerShell compatibility - Bump version to 1.3.2)
     Write-Host "      What:     Skills + Tools only"
     Write-Host "      Keeps:    Skills, scripts, workflows"
     Write-Host "      Removes:  Docs, assets, extra files"
