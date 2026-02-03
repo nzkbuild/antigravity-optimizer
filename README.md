@@ -138,4 +138,4 @@ python tools/skill_router.py --verify
 
 ## License
 
-MIT © [nzkbuild](https://github.com/nzkbuild)
+MIT (c) [nzkbuild](https://github.com/nzkbuild)
