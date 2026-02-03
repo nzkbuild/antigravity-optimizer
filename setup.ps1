@@ -278,7 +278,7 @@ function Invoke-EssentialsCleanup {
     $keepList = @(
         ".agent", ".cache", ".gitignore", ".gitattributes",
         "assets", "scripts", "tools", "workflows",
-        "activate-skills.ps1", "activate-skills.sh", "setup.ps1",
+        "activate-skills.cmd", "activate-skills.ps1", "activate-skills.sh", "setup.ps1",
         "bundles.json", "LICENSE"
     )
     

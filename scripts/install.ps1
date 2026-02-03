@@ -135,14 +135,8 @@ function Install-Workflow {
 
     New-Item -ItemType Directory -Path $workflowDir -Force | Out-Null
 
-    $template = Get-Content -Path $templatePath -Raw
-    $template = $template -replace "\{\{REPO_ROOT\}\}", $repoRoot.Path
-    try {
-        Set-Content -Path $workflowTarget -Value $template
-    } catch {
-        Write-Error "Failed to write workflow. Check permissions for $workflowDir."
-        exit 1
-    }
+    # Copy template as-is (no path replacement needed - template is now dynamic)
+    Copy-Item -Path $templatePath -Destination $workflowTarget -Force
 
     Write-Host "Installed workflow: $workflowTarget"
 }

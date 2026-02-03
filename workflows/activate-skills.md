@@ -16,46 +16,69 @@ You are an intelligent skill router. When the user invokes `/activate-skills <ta
 
 ## Execution Steps
 
-### Step 1: Run the Router
+### Step 1: Locate the Optimizer
+
+Find the antigravity-optimizer folder. Check in order:
+
+1. Look for `antigravity-optimizer` folder in the current workspace root
+2. Check `ANTIGRAVITY_OPTIMIZER_ROOT` environment variable
+3. Check `~/.codex/skills` for installed skills
+
+### Step 2: Run the Router
 
 Execute the skill router to get recommended skills:
 
+**Windows (CMD):**
+
+```cmd
+<optimizer-path>\activate-skills.cmd <user's task>
+```
+
+**Windows (PowerShell):**
+
 ```powershell
-{{REPO_ROOT}}\activate-skills.ps1 <user's task>
+<optimizer-path>\activate-skills.ps1 <user's task>
+```
+
+**Linux/macOS:**
+
+```bash
+<optimizer-path>/activate-skills.sh <user's task>
 ```
 
 The router outputs something like:
+
 ```
 /frontend-design /ui-ux-pro-max /page-cro
 Build a modern landing page
 ```
 
-### Step 2: Parse the Output
+### Step 3: Parse the Output
 
 Extract the skill IDs from the first line (the ones starting with `/`).
 
 Example: `/frontend-design /ui-ux-pro-max /page-cro` → skills = ["frontend-design", "ui-ux-pro-max", "page-cro"]
 
-### Step 3: Load Each Skill
+### Step 4: Load Each Skill
 
-For each skill ID, read its SKILL.md file:
+For each skill ID, read its SKILL.md file from:
 
-```
-{{REPO_ROOT}}\.agent\skills\skills\<skill-id>\SKILL.md
-```
+- `<optimizer-path>\.agent\skills\skills\<skill-id>\SKILL.md` (Antigravity IDE)
+- `~/.codex/skills/<skill-id>/SKILL.md` (Codex CLI)
 
 Read the first 300-500 lines of each skill to understand its instructions.
 
-### Step 4: Execute the Task
+### Step 5: Execute the Task
 
 Apply the loaded skill instructions to complete the user's task. The skills provide:
+
 - Best practices and patterns to follow
 - Code templates and examples
 - Quality standards and checklists
 
 Combine insights from all loaded skills to deliver a high-quality result.
 
-### Step 5: Report What You Used
+### Step 6: Report What You Used
 
 After completing the task, briefly mention which skills were applied:
 
@@ -66,9 +89,11 @@ After completing the task, briefly mention which skills were applied:
 ## Special Commands
 
 ### --verify
-Run `{{REPO_ROOT}}\activate-skills.ps1 --verify` to check skill counts and integrity.
+
+Run `activate-skills.ps1 --verify` to check skill counts and integrity.
 
 ### --bundle <name>
+
 Use a preset bundle (frontend, backend, marketing, security, product, fullstack, devops).
 
 ## Error Handling
@@ -76,6 +101,7 @@ Use a preset bundle (frontend, backend, marketing, security, product, fullstack,
 - If router command fails: Explain the error and ask user to check Python/git installation
 - If skill file not found: Skip that skill and continue with others
 - If no skills match: Use the "brainstorming" skill as fallback
+- If activate-skills.cmd not found but .ps1 exists: Use PowerShell instead
 
 ## Token Budget
 
