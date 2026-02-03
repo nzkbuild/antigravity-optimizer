@@ -236,11 +236,15 @@ function Repair-SkillYaml {
     .SYNOPSIS
         Repairs broken YAML frontmatter in SKILL.md files.
     .DESCRIPTION
-        The upstream skills repo has ~60+ files with invalid YAML that breaks Codex.
-        Common issues:
+        The upstream skills repo has files with invalid YAML that breaks Codex.
+        This function auto-fixes these issues after skills are installed.
+        
+        Common issues fixed:
         - Empty multi-line descriptions: "description: |" with no content
         - Nested double quotes: description: "...says "hello"..."
-        This function auto-fixes these issues after skills are installed.
+        - Missing description field entirely
+        
+        This is designed to be future-proof and handle any number of nested quotes.
     #>
     
     Write-Host ""
@@ -270,16 +274,23 @@ function Repair-SkillYaml {
                     $needsRepair = $true
                 }
                 
-                # Issue 2: Nested double quotes in description
+                # Issue 2: Nested double quotes in description (unlimited pairs)
                 # Pattern: description: "...text "quoted text" more..."
-                # Fix: Replace inner quotes with single quotes
-                if ($content -match 'description:\s*"[^"]*"[^"]*"') {
-                    # Extract the description line and fix it
-                    $content = $content -replace '(description:\s*")([^"]*)"([^"]*)"([^"]*)"([^"]*)"([^"]*)"([^"]*)"([^"]*)"([^"]*)', '$1$2''$3''$4''$5''$6''$7''$8''$9'
-                    $content = $content -replace '(description:\s*")([^"]*)"([^"]*)"([^"]*)"([^"]*)"([^"]*)"([^"]*)', '$1$2''$3''$4''$5''$6''$7'
-                    $content = $content -replace '(description:\s*")([^"]*)"([^"]*)"([^"]*)"([^"]*)', '$1$2''$3''$4''$5'
-                    $content = $content -replace '(description:\s*")([^"]*)"([^"]*)"([^"]*)', '$1$2''$3''$4'
-                    $content = $content -replace '(description:\s*")([^"]*)"([^"]*)', '$1$2''$3'
+                # Fix: Replace ALL inner quotes with single quotes using a loop
+                # This handles any number of nested quote pairs, not just 4
+                $maxIterations = 20  # Safety limit to prevent infinite loops
+                $iteration = 0
+                while ($content -match '(description:\s*"[^"]*)"([^"]*)"' -and $iteration -lt $maxIterations) {
+                    # Replace the first pair of inner quotes with single quotes
+                    $content = $content -replace '(description:\s*"[^"]*)"([^"]*)"', '$1''$2'''
+                    $needsRepair = $true
+                    $iteration++
+                }
+                
+                # Issue 3: Description missing entirely (has name but no description)
+                if ($content -match '^---\s*[\r\n]+name:\s*[^\r\n]+[\r\n]+(?!description:)' -and $content -notmatch 'description:') {
+                    $skillName = $file.Directory.Name
+                    $content = $content -replace '(^---\s*[\r\n]+name:\s*[^\r\n]+)([\r\n]+)', "`$1`r`ndescription: `"$skillName skill`"`$2"
                     $needsRepair = $true
                 }
                 

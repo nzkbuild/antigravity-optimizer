@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Initial release
-- 625+ skills from sickn33's Antigravity Awesome Skills
+- 600+ skills from sickn33's Antigravity Awesome Skills
 - Dual installation: Codex CLI (`~/.codex/skills/`) and Antigravity IDE (`.agent/skills/`)
 - Global workflow for `/activate-skills` command
 - Custom bundles: frontend, backend, fullstack, marketing, security, product, devops

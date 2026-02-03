@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/nzkbuild/antigravity-optimizer?style=social)](https://github.com/nzkbuild/antigravity-optimizer)
 
-The **Antigravity Optimizer** automatically picks the right AI skills for your task. 625+ skills, zero memorization.
+The **Antigravity Optimizer** automatically picks the right AI skills for your task. 600+ skills, zero memorization.
 
 > **Credits**: Skills are from **[sickn33's Antigravity Awesome Skills](https://github.com/sickn33/antigravity-awesome-skills)**. We just make them easier to use!
 
@@ -71,8 +71,8 @@ The optimizer installs **3 components**, not just skills:
 
 | Component | Location | Purpose |
 | --------- | -------- | ------- |
-| **625+ Skills** | `~/.codex/skills/` | AI knowledge library for Codex CLI |
-| **625+ Skills** | `.agent/skills/` | Same skills for Antigravity IDE |
+| **600+ Skills** | `~/.codex/skills/` | AI knowledge library for Codex CLI |
+| **600+ Skills** | `.agent/skills/` | Same skills for Antigravity IDE |
 | **Workflow** | `~/.gemini/.../activate-skills.md` | Enables `/activate-skills` command |
 | **Global Rules** | `~/.gemini/GEMINI.md` | Teaches AI how to use the router |
 
@@ -84,7 +84,7 @@ All 3 work together to give you smart skill routing!
 
 | Feature | Description |
 | ------- | ----------- |
-| **625+ Skills** | Auto-updated from sickn33's library |
+| **600+ Skills** | Auto-updated from sickn33's library |
 | **Smart Routing** | Picks the best skills for your task |
 | **Global Workflow** | `/activate-skills` works in any project |
 | **Global Rules** | AI knows how to route automatically |

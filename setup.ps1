@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Interactive onboarding for the Antigravity Optimizer.
-    Installs 625+ AI skills for use with Codex CLI and Antigravity IDE.
+    Installs 600+ AI skills for use with Codex CLI and Antigravity IDE.
     
     Modes:
     - Essentials: Installs skills, removes docs (recommended)
