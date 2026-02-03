@@ -8,6 +8,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Python version check
+if sys.version_info < (3, 6):
+    print("Error: Python 3.6+ is required. You have Python {}.{}.{}".format(*sys.version_info[:3]), file=sys.stderr)
+    print("Please upgrade Python from https://python.org", file=sys.stderr)
+    sys.exit(1)
+
 
 DEFAULT_MAX_SKILLS = 3
 MAX_SKILLS_CAP = 8  # Match GEMINI.md tier system (complex tasks: 6-8 skills)
@@ -293,16 +299,31 @@ def main():
         index_paths = {item.get("path") for item in skills if isinstance(item, dict) and item.get("path")}
         missing_on_disk = sorted(index_paths - skill_paths)
         missing_in_index = sorted(skill_paths - index_paths)
-        print(f"skills_index.json entries: {len(index_paths)}")
-        print(f"SKILL.md folders: {len(skill_paths)}")
-        print(f"Missing on disk: {len(missing_on_disk)}")
+        
+        print("=" * 50)
+        print("SKILLS VERIFICATION REPORT")
+        print("=" * 50)
+        print(f"Index entries:    {len(index_paths)}")
+        print(f"Skill folders:    {len(skill_paths)}")
+        print(f"Missing on disk:  {len(missing_on_disk)}")
         print(f"Missing in index: {len(missing_in_index)}")
-        if missing_on_disk:
-            print("Missing on disk (sample 20):")
-            print("\n".join(missing_on_disk[:20]))
-        if missing_in_index:
-            print("Missing in index (sample 20):")
-            print("\n".join(missing_in_index[:20]))
+        print()
+        
+        # Status assessment
+        if len(missing_on_disk) == 0 and len(missing_in_index) == 0:
+            print("Status: [OK] SYNCED - Index matches disk perfectly")
+        elif len(missing_on_disk) > 0:
+            print(f"Status: [!] MISMATCH - {len(missing_on_disk)} skills in index but not on disk")
+            print("\nRecommendation: Run setup.ps1 (or setup.sh) to reinstall skills")
+            if len(missing_on_disk) <= 10:
+                print("\nMissing skills:")
+                for skill in missing_on_disk:
+                    print(f"  - {skill}")
+        elif len(missing_in_index) > 0:
+            print(f"Status: [!] EXTRA - {len(missing_in_index)} skill folders not in index")
+            print("\nThese may be custom skills or stale directories.")
+        
+        print("=" * 50)
         return 0
 
     if not task:
@@ -319,6 +340,14 @@ def main():
     feedback = load_feedback()
     bundles = load_bundles()
     bundle_set = set(bundles.get(args.bundle or "", []))
+    
+    # Validate bundle skills exist in index
+    if args.bundle and bundle_set:
+        skill_ids = {s.get("id") or s.get("name") for s in skills}
+        missing_bundle_skills = bundle_set - skill_ids
+        if missing_bundle_skills:
+            print(f"Warning: Bundle '{args.bundle}' references skills not in index: {', '.join(sorted(missing_bundle_skills))}", file=sys.stderr)
+    
     picked = pick_skills(skills, task, max_skills, feedback, bundle_set)
 
     if args.feedback:

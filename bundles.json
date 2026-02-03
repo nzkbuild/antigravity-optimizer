@@ -32,8 +32,10 @@
     "api-patterns"
   ],
   "devops": [
-    "infrastructure",
-    "ci-cd",
-    "monitoring"
+    "devops-troubleshooter",
+    "cicd-automation-workflow-automate",
+    "docker-expert",
+    "kubernetes-architect",
+    "deployment-pipeline-design"
   ]
 }

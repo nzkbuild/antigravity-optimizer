@@ -132,6 +132,64 @@ install_skills() {
     log_step success "Skills also installed to: $AGENT_SKILLS"
 }
 
+repair_skill_yaml() {
+    # Repairs broken YAML frontmatter in SKILL.md files
+    # Common issues: empty descriptions, nested double quotes
+    # This matches the PowerShell Repair-SkillYaml function
+    
+    echo ""
+    echo -e "${GRAY}Validating skill files...${NC}"
+    
+    local repaired=0
+    local failed=0
+    
+    # Process both skill locations
+    for base_dir in "$SKILLS_ROOT" "$SCRIPT_DIR/.agent/skills"; do
+        [ ! -d "$base_dir" ] && continue
+        
+        # Find all SKILL.md files
+        while IFS= read -r -d '' file; do
+            # Get skill name from directory
+            skill_name=$(basename "$(dirname "$file")")
+            
+            # Read file content
+            content=$(cat "$file" 2>/dev/null) || continue
+            original_content="$content"
+            needs_repair=false
+            
+            # Issue 1: Empty multi-line description (description: | followed by another field)
+            if echo "$content" | grep -qE 'description:\s*\|\s*$'; then
+                # Replace empty description with placeholder
+                content=$(echo "$content" | sed -E "s/description:\s*\|/description: \"$skill_name skill - no description provided.\"/")
+                needs_repair=true
+            fi
+            
+            # Issue 2: Nested double quotes in description
+            # Loop to handle multiple pairs (up to 20 iterations for safety)
+            local iteration=0
+            while echo "$content" | grep -qE 'description:\s*"[^"]*"[^"]*"' && [ $iteration -lt 20 ]; do
+                # Replace inner double quotes with single quotes using sed
+                # This is a simplified approach - replaces the pattern progressively
+                content=$(echo "$content" | sed -E 's/(description:\s*"[^"]*)"([^"]*)"([^"]*")/\1'"'"'\2'"'"'\3/')
+                needs_repair=true
+                ((iteration++))
+            done
+            
+            # Write back if changed
+            if [ "$needs_repair" = true ] && [ "$content" != "$original_content" ]; then
+                echo "$content" > "$file"
+                ((repaired++))
+            fi
+        done < <(find "$base_dir" -name "SKILL.md" -type f -print0 2>/dev/null)
+    done
+    
+    if [ $repaired -gt 0 ]; then
+        log_step success "Repaired $repaired skill files with YAML issues"
+    else
+        log_step success "All skill files validated OK"
+    fi
+}
+
 remove_optimizer_git() {
     log_step progress "Removing optimizer's .git folder..."
     echo -e "${GRAY}    (So your project stays pointed to YOUR repo, not ours!)${NC}"
@@ -410,6 +468,7 @@ case "$MODE" in
             fi
         fi
         install_skills
+        repair_skill_yaml
         remove_optimizer_git
         install_workflow
         install_global_rules
@@ -419,6 +478,7 @@ case "$MODE" in
         ;;
     full)
         install_skills
+        repair_skill_yaml
         remove_optimizer_git
         install_workflow
         install_global_rules
@@ -427,6 +487,7 @@ case "$MODE" in
         ;;
     update)
         install_skills
+        repair_skill_yaml
         show_verification_report
         show_completion
         exit 0
