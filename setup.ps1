@@ -38,7 +38,7 @@
     Quick skill update only.
 
 .NOTES
-    Version:        1.3.0
+    Version:        1.3.1
     Author:         nzkbuild
     Repository:     https://github.com/nzkbuild/antigravity-optimizer
     Credits:        Skills from @sickn33's Antigravity Awesome Skills
@@ -70,7 +70,7 @@ param(
 # CONFIGURATION
 # ============================================================================
 
-$script:Version = "1.3.0"
+$script:Version = "1.3.1"
 $script:StartTime = Get-Date
 $script:ExitCode = 0
 
@@ -143,6 +143,46 @@ function Show-Banner {
     Write-Color "         >> ANTIGRAVITY OPTIMIZER SETUP v$script:Version <<" $script:Colors.Green
     Write-Color "-----------------------------------------------------------" $script:Colors.White
     Write-Host ""
+}
+
+function Show-WhatGetsInstalled {
+    [CmdletBinding()]
+    param()
+    
+    if ($Silent) { return }
+    
+    Write-Color "What is this?" $script:Colors.Yellow
+    Write-Host "  The Antigravity Optimizer gives AI the power to choose the"
+    Write-Host "  right skills for your task automatically."
+    Write-Host ""
+    
+    Write-Color "What gets installed?" $script:Colors.Yellow
+    Write-Host "  +-----------------------------------------------------+"
+    Write-Host "  | " -NoNewline
+    Write-Color "📚 626 Skills" $script:Colors.Cyan -NoNewline
+    Write-Host "                                       |"
+    Write-Host "  |    AI expertise files (React, Python, DevOps...)    |"
+    Write-Host "  |    -> $env:USERPROFILE\.codex\skills\" -ForegroundColor Gray
+    Write-Host "  |    -> $(Split-Path $script:RepoRoot -Leaf)\.agent\skills\" -ForegroundColor Gray
+    Write-Host "  +-----------------------------------------------------+"
+    Write-Host "  | " -NoNewline
+    Write-Color "⚡ /activate-skills Command" $script:Colors.Cyan -NoNewline
+    Write-Host "                        |"
+    Write-Host "  |    Makes the command work globally                  |"
+    Write-Host "  |    -> $env:USERPROFILE\.gemini\...\workflows\" -ForegroundColor Gray
+    Write-Host "  +-----------------------------------------------------+"
+    Write-Host "  | " -NoNewline
+    Write-Color "📋 AI Rules (Optional)" $script:Colors.Cyan -NoNewline
+    Write-Host "                             |"
+    Write-Host "  |    Teaches AI how to use the skills                 |"
+    Write-Host "  |    -> You choose: Global or Workspace only          |"
+    Write-Host "  +-----------------------------------------------------+"
+    Write-Host ""
+    
+    if (-not $Silent) {
+        Write-Host "Press Enter to continue or Ctrl+C to cancel..." -ForegroundColor Gray
+        Read-Host | Out-Null
+    }
 }
 
 function Test-Prerequisites {
@@ -355,18 +395,34 @@ function Show-Menu {
     [CmdletBinding()]
     param()
     
-    Write-Color "Welcome to the Antigravity Optimizer." $script:Colors.White
-    Write-Color "This script installs skills and sets up Antigravity workflows." $script:Colors.White
     Write-Host ""
-    Write-Color "Select Mode:" $script:Colors.Cyan
-    Write-Color "  [1] Essentials Only (Recommended)" $script:Colors.Green
-    Write-Color "      - Installs skills & tools, removes extra files" $script:Colors.White
+    Write-Color "===========================================================" $script:Colors.Cyan
+    Write-Color "  INSTALLATION MODE" $script:Colors.Cyan
+    Write-Color "===========================================================" $script:Colors.Cyan
     Write-Host ""
+    Write-Host "Choose what to install:"
+    Write-Host ""
+    
+    Write-Color "  [1] Essentials " -NoNewline
+    Write-Color "⭐ RECOMMENDED" $script:Colors.Yellow
+    Write-Host "      What:     Skills + Tools only"
+    Write-Host "      Keeps:    Skills, scripts, workflows"
+    Write-Host "      Removes:  Docs, assets, extra files"
+    Write-Host "      Best for: Clean project, fast setup"
+    Write-Host "      Size:     ~15 MB"
+    Write-Host ""
+    
     Write-Color "  [2] Full Repository" $script:Colors.Yellow
-    Write-Color "      - Keeps all documentation and assets" $script:Colors.White
+    Write-Host "      What:     Everything including documentation"
+    Write-Host "      Keeps:    All files from the repo"
+    Write-Host "      Best for: Contributing, learning, reference"
+    Write-Host "      Size:     ~25 MB"
     Write-Host ""
+    
     Write-Color "  [3] Update Skills Only" $script:Colors.Cyan
-    Write-Color "      - Just check for and install skill updates (quick)" $script:Colors.White
+    Write-Host "      What:     Refresh skills to latest version"
+    Write-Host "      Takes:    ~5 seconds"
+    Write-Host "      Best for: Quick updates"
     Write-Host ""
     
     return Read-Host "Enter selection [1/2/3]"
@@ -378,6 +434,7 @@ function Show-Menu {
 
 try {
     Show-Banner
+    Show-WhatGetsInstalled
     
     # Check prerequisites
     if (-not (Test-Prerequisites)) {
@@ -385,7 +442,7 @@ try {
         exit 1
     }
     
-    # Determine mode
+    #Determine mode
     $selectedMode = $Mode
     
     if (-not $selectedMode) {

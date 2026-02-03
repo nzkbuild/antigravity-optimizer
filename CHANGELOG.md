@@ -5,6 +5,20 @@ All notable changes to the Antigravity Optimizer will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-02-03
+
+### Added
+- **Educational installer**: "What Gets Installed" section explains Skills/Workflow/Rules
+- **Enhanced mode menu**: Detailed descriptions, size info, use cases for each mode
+- **Conflict detection**: Warns if both global and workspace rules exist
+- **Preview before modify**: Shows what will change before appending to GEMINI.md
+- **Version markers**: Rules include version tag for future update detection
+- **Error handling**: Fallback to workspace if global installation fails
+
+### Changed
+- **Improved rules menu**: Checkmarks/X marks show pros/cons, clear recommendations
+- **Better explanations**: Each choice explains when to use  it and what it does
+
 ## [1.3.0] - 2026-02-03
 
 ### Added

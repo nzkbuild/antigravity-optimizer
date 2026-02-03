@@ -146,7 +146,9 @@ function Install-GlobalRules {
         return
     }
 
+    $version = "1.3.1"
     $rulesBlock = @"
+<!-- ANTIGRAVITY_OPTIMIZER_VERSION: $version -->
 ## Activate Skills Router (Preferred)
 
 For non-trivial tasks, prefer routing with the optimizer instead of manual skill loading.
@@ -159,32 +161,100 @@ If the router is unavailable, fall back to manual skill loading below.
 
 "@
 
-    # Check if already installed
-    if (Test-Path $globalRulesPath) {
-        $content = Get-Content -Path $globalRulesPath -Raw
-        if ($content -match "## Activate Skills Router \(Preferred\)") {
-            Write-Host "Global rules already contain Activate Skills Router section." -ForegroundColor Gray
+    # Detect existing files
+    $globalExists = Test-Path $globalRulesPath
+    $workspacePath = Join-Path $repoRoot ".gemini\GEMINI.md"
+    $workspaceExists = Test-Path $workspacePath
+    
+    $globalHasRules = $globalExists -and ((Get-Content -Path $globalRulesPath -Raw -ErrorAction SilentlyContinue) -match "Activate Skills Router")
+    $workspaceHasRules = $workspaceExists -and ((Get-Content -Path $workspacePath -Raw -ErrorAction SilentlyContinue) -match "Activate Skills Router")
+
+    # Scenario 1: Global rules already exist
+    if ($globalHasRules) {
+        Write-Host ""
+        Write-Host "===========================================================" -ForegroundColor Cyan
+        Write-Host "  AI INSTRUCTIONS ALREADY INSTALLED" -ForegroundColor White
+        Write-Host "===========================================================" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "  $([char]0x2713) Global instructions found at:" -ForegroundColor Green
+        Write-Host "    $globalRulesPath" -ForegroundColor Gray
+        Write-Host ""
+        Write-Host "  All your projects already have /activate-skills enabled."
+        Write-Host "  No additional setup needed!"
+        Write-Host ""
+        return
+    }
+
+    # Scenario 2: Both workspace and global exist (conflict)
+    if ($globalExists -and $workspaceExists) {
+        Write-Host ""
+        Write-Host "===========================================================" -ForegroundColor Yellow
+        Write-Host "  ⚠️  CONFLICT DETECTED" -ForegroundColor Yellow
+        Write-Host "===========================================================" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "  You have configuration files in BOTH locations:" -ForegroundColor White
+        Write-Host ""
+        Write-Host "    Global:    $globalRulesPath" -ForegroundColor Cyan
+        Write-Host "    Workspace: $workspacePath" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "  How AI works:" -ForegroundColor Yellow
+        Write-Host "    AI always checks GLOBAL first, then workspace."
+        Write-Host "    Global instructions will take priority."
+        Write-Host ""
+        Write-Host "  Recommendation:" -ForegroundColor Yellow
+        Write-Host "    • Keep global if you want consistency everywhere"
+        Write-Host "    • Delete global if you want per-project control"
+        Write-Host ""
+        $response = Read-Host "  Continue anyway? [Y/N]"
+        if ($response -notmatch "^[yY]$") {
+            Write-Host "[i] Skipped rules installation." -ForegroundColor Gray
             return
         }
     }
 
-    # Show clear announcement
+    # Scenario 3: Show menu for fresh install
     Write-Host ""
     Write-Host "===========================================================" -ForegroundColor Cyan
-    Write-Host "  WORKFLOW & RULES INSTALLATION" -ForegroundColor White
+    Write-Host "  AI INSTRUCTIONS SETUP" -ForegroundColor White
     Write-Host "===========================================================" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "  The optimizer can install workflow rules to help AI use" -ForegroundColor White
-    Write-Host "  /activate-skills automatically." -ForegroundColor White
+    Write-Host "  The optimizer needs to teach AI how to use /activate-skills."
+    Write-Host "  This adds ~15 lines to a configuration file."
     Write-Host ""
-    Write-Host "  Choose where to install:" -ForegroundColor Yellow
-    Write-Host ""
-    Write-Host "  [1] Global (all projects) - ~/.gemini/GEMINI.md" -ForegroundColor Green
-    Write-Host "  [2] Workspace only - ./.gemini/GEMINI.md" -ForegroundColor Cyan
-    Write-Host "  [3] Skip - Don't install rules" -ForegroundColor Gray
+    Write-Host "  Where should we add these instructions?" -ForegroundColor Yellow
     Write-Host ""
     
-    $choice = Read-Host "  Enter choice [1/2/3]"
+    Write-Host "  [1] " -NoNewline -ForegroundColor Green
+    Write-Host "Global - All Your Projects " -NoNewline
+    Write-Host "⭐ RECOMMENDED" -ForegroundColor Yellow
+    Write-Host "      AI File:  $globalRulesPath" -ForegroundColor Gray
+    Write-Host "      Effect:   /activate-skills works in ALL projects"
+    Write-Host "      Use when: Your personal computer"
+    Write-Host ""
+    Write-Host "      $([char]0x2713) Set once, works everywhere" -ForegroundColor Green
+    Write-Host "      $([char]0x2713) Consistent across projects" -ForegroundColor Green
+    Write-Host "      $([char]0x2717) Shared repos might conflict" -ForegroundColor Red
+    Write-Host ""
+    
+    Write-Host "  [2] " -NoNewline -ForegroundColor Cyan
+    Write-Host "Workspace - This Project Only"
+    Write-Host "      AI File:  $workspacePath" -ForegroundColor Gray
+    Write-Host "      Effect:   /activate-skills only works HERE"
+    Write-Host "      Use when: Team projects, client work"
+    Write-Host ""
+    Write-Host "      $([char]0x2713) Won't affect other projects" -ForegroundColor Green
+    Write-Host "      $([char]0x2713) Safe for shared repositories" -ForegroundColor Green
+    Write-Host "      $([char]0x2717) Must setup per project" -ForegroundColor Red
+    Write-Host ""
+    
+    Write-Host "  [3] " -NoNewline -ForegroundColor Gray
+    Write-Host "Skip - I'll Configure This Later" -ForegroundColor Gray
+    Write-Host "      Effect: Skills install, but /activate-skills won't work yet" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "      Run setup again anytime to add instructions." -ForegroundColor Gray
+    Write-Host ""
+    
+    $choice = Read-Host "  Choose [1/2/3]"
     
     switch ($choice) {
         "1" {
@@ -193,7 +263,7 @@ If the router is unavailable, fall back to manual skill loading below.
         }
         "2" {
             # Workspace install
-            $targetPath = Join-Path $repoRoot ".gemini\GEMINI.md"
+            $targetPath = $workspacePath
         }
         default {
             Write-Host "[i] Skipped rules installation." -ForegroundColor Gray
@@ -201,7 +271,40 @@ If the router is unavailable, fall back to manual skill loading below.
         }
     }
 
-    # Install to chosen location
+    # Preview before modifying
+    if (Test-Path $targetPath) {
+        $currentSize = (Get-Item $targetPath).Length
+        $newSize = $currentSize + $rulesBlock.Length
+        
+        Write-Host ""
+        Write-Host "===========================================================" -ForegroundColor Cyan
+        Write-Host "  PREVIEW: WHAT WILL BE MODIFIED" -ForegroundColor White
+        Write-Host "===========================================================" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "  File: $targetPath" -ForegroundColor White
+        Write-Host "  Current size: $([math]::Round($currentSize/1KB, 1)) KB" -ForegroundColor Gray
+        Write-Host "  New size:     $([math]::Round($newSize/1KB, 1)) KB (added ~15 lines)" -ForegroundColor Gray
+        Write-Host ""
+        Write-Host "  Your existing rules will NOT be overwritten." -ForegroundColor Yellow
+        Write-Host "  We will APPEND this section at the end:" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "  ---" -ForegroundColor Gray
+        Write-Host "  <!-- ANTIGRAVITY_OPTIMIZER_VERSION: $version -->" -ForegroundColor Gray
+        Write-Host "  ## Activate Skills Router (Preferred)" -ForegroundColor Gray
+        Write-Host "  " -ForegroundColor Gray
+        Write-Host "  For non-trivial tasks, prefer routing..." -ForegroundColor Gray
+        Write-Host "  [... 10 more lines ...]" -ForegroundColor Gray
+        Write-Host "  ---" -ForegroundColor Gray
+        Write-Host ""
+        
+        $confirm = Read-Host "  Continue? [Y/N]"
+        if ($confirm -notmatch "^[yY]$") {
+            Write-Host "[i] Cancelled rules installation." -ForegroundColor Gray
+            return
+        }
+    }
+
+    # Install to chosen location with error handling
     try {
         $targetDir = Split-Path $targetPath
         if (-not (Test-Path $targetDir)) {
@@ -209,15 +312,35 @@ If the router is unavailable, fall back to manual skill loading below.
         }
         
         if (Test-Path $targetPath) {
-            Add-Content -Path $targetPath -Value ("`r`n" + $rulesBlock)
+            Add-Content -Path $targetPath -Value ("`r`n" + $rulesBlock) -ErrorAction Stop
             Write-Host "[+] Updated: $targetPath" -ForegroundColor Green
         } else {
-            Set-Content -Path $targetPath -Value $rulesBlock
+            Set-Content -Path $targetPath -Value $rulesBlock -ErrorAction Stop
             Write-Host "[+] Created: $targetPath" -ForegroundColor Green
         }
     }
     catch {
-        Write-Host "[!] Failed to update rules: $_" -ForegroundColor Red
+        Write-Host ""
+        Write-Host "[X] ERROR: Cannot write to location" -ForegroundColor Red
+        Write-Host "    Reason: $_" -ForegroundColor Gray
+        Write-Host ""
+        
+        # Fallback to workspace if global failed
+        if ($targetPath -eq $globalRulesPath) {
+            Write-Host "[!] Fallback: Installing to workspace instead..." -ForegroundColor Yellow
+            try {
+                $fallbackPath = Join-Path $repoRoot ".gemini\GEMINI.md"
+                $fallbackDir = Split-Path $fallbackPath
+                if (-not (Test-Path $fallbackDir)) {
+                    New-Item -ItemType Directory -Path $fallbackDir -Force | Out-Null
+                }
+                Set-Content -Path $fallbackPath -Value $rulesBlock -ErrorAction Stop
+                Write-Host "[+] Installed to: $fallbackPath" -ForegroundColor Green
+            }
+            catch {
+                Write-Host "[X] Fallback also failed: $_" -ForegroundColor Red
+            }
+        }
     }
 }
 
