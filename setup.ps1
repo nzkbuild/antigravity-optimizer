@@ -159,20 +159,20 @@ function Show-WhatGetsInstalled {
     Write-Color "What gets installed?" $script:Colors.Yellow
     Write-Host "  +-----------------------------------------------------+"
     Write-Host "  | " -NoNewline
-    Write-Color "📚 626 Skills" $script:Colors.Cyan -NoNewline
+    Write-Color "[1] 626 Skills" $script:Colors.Cyan -NoNewline
     Write-Host "                                       |"
     Write-Host "  |    AI expertise files (React, Python, DevOps...)    |"
     Write-Host "  |    -> $env:USERPROFILE\.codex\skills\" -ForegroundColor Gray
     Write-Host "  |    -> $(Split-Path $script:RepoRoot -Leaf)\.agent\skills\" -ForegroundColor Gray
     Write-Host "  +-----------------------------------------------------+"
     Write-Host "  | " -NoNewline
-    Write-Color "⚡ /activate-skills Command" $script:Colors.Cyan -NoNewline
+    Write-Color "[2] /activate-skills Command" $script:Colors.Cyan -NoNewline
     Write-Host "                        |"
     Write-Host "  |    Makes the command work globally                  |"
     Write-Host "  |    -> $env:USERPROFILE\.gemini\...\workflows\" -ForegroundColor Gray
     Write-Host "  +-----------------------------------------------------+"
     Write-Host "  | " -NoNewline
-    Write-Color "📋 AI Rules (Optional)" $script:Colors.Cyan -NoNewline
+    Write-Color "[3] AI Rules (Optional)" $script:Colors.Cyan -NoNewline
     Write-Host "                             |"
     Write-Host "  |    Teaches AI how to use the skills                 |"
     Write-Host "  |    -> You choose: Global or Workspace only          |"
