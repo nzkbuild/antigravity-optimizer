@@ -231,10 +231,74 @@ function Install-RouterSkill {
     [Environment]::SetEnvironmentVariable("ANTIGRAVITY_OPTIMIZER_ROOT", $repoRoot.Path, "User")
 }
 
+function Show-VerificationReport {
+    Write-Host ""
+    Write-Host "-----------------------------------------------------------" -ForegroundColor White
+    Write-Host "SKILLS VERIFICATION REPORT" -ForegroundColor Cyan
+    Write-Host "-----------------------------------------------------------" -ForegroundColor White
+    
+    # Count installed skills in .agent/skills
+    $agentSkillsIndex = Join-Path $repoRoot ".agent\skills\skills_index.json"
+    $codexSkillsIndex = Join-Path $skillsRoot "skills_index.json"
+    
+    $installedCount = 0
+    $sourceCount = 0
+    
+    # Get installed count
+    if (Test-Path $agentSkillsIndex) {
+        try {
+            $installedCount = (Get-Content $agentSkillsIndex | ConvertFrom-Json).Count
+        } catch {
+            $installedCount = 0
+        }
+    }
+    
+    # Get source count from cache
+    if (Test-Path $skillsIndex) {
+        try {
+            $sourceCount = (Get-Content $skillsIndex | ConvertFrom-Json).Count
+        } catch {
+            $sourceCount = 0
+        }
+    }
+    
+    # Display results
+    Write-Host ""
+    Write-Host "  Source repo (sickn33):    $sourceCount skills" -ForegroundColor White
+    Write-Host "  Installed locally:        $installedCount skills" -ForegroundColor White
+    
+    if ($installedCount -eq $sourceCount -and $installedCount -gt 0) {
+        Write-Host ""
+        Write-Host "  Status: " -NoNewline
+        Write-Host "SYNCED" -ForegroundColor Green -NoNewline
+        Write-Host " - You have all available skills!" -ForegroundColor White
+    } elseif ($installedCount -lt $sourceCount) {
+        $missing = $sourceCount - $installedCount
+        Write-Host ""
+        Write-Host "  Status: " -NoNewline
+        Write-Host "PARTIAL" -ForegroundColor Yellow -NoNewline
+        Write-Host " - Missing $missing skills. Run setup again." -ForegroundColor White
+    } elseif ($installedCount -eq 0) {
+        Write-Host ""
+        Write-Host "  Status: " -NoNewline
+        Write-Host "NOT INSTALLED" -ForegroundColor Red -NoNewline
+        Write-Host " - Run .\setup.ps1 to install skills." -ForegroundColor White
+    } else {
+        Write-Host ""
+        Write-Host "  Status: " -NoNewline
+        Write-Host "OK" -ForegroundColor Green
+    }
+    
+    Write-Host ""
+    Write-Host "  Tip: Run '.\activate-skills.ps1 --verify' for detailed check" -ForegroundColor Gray
+    Write-Host "-----------------------------------------------------------" -ForegroundColor White
+}
+
 Ensure-SkillsRepo
 Install-Workflow
 Install-GlobalRules
 Install-RouterSkill
+Show-VerificationReport
 
 if ($AddPath) {
     $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")

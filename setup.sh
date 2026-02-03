@@ -263,6 +263,53 @@ set_global_optimizer_root() {
     fi
 }
 
+show_verification_report() {
+    echo ""
+    echo "-----------------------------------------------------------"
+    echo -e "${CYAN}SKILLS VERIFICATION REPORT${NC}"
+    echo "-----------------------------------------------------------"
+    
+    # Count installed skills
+    AGENT_SKILLS_INDEX="$SCRIPT_DIR/.agent/skills/skills_index.json"
+    SOURCE_INDEX="$SKILLS_CACHE/skills_index.json"
+    
+    INSTALLED_COUNT=0
+    SOURCE_COUNT=0
+    
+    # Get installed count
+    if [ -f "$AGENT_SKILLS_INDEX" ]; then
+        INSTALLED_COUNT=$(python3 -c "import json; print(len(json.load(open('$AGENT_SKILLS_INDEX'))))" 2>/dev/null || echo "0")
+    fi
+    
+    # Get source count
+    if [ -f "$SOURCE_INDEX" ]; then
+        SOURCE_COUNT=$(python3 -c "import json; print(len(json.load(open('$SOURCE_INDEX'))))" 2>/dev/null || echo "0")
+    fi
+    
+    echo ""
+    echo "  Source repo (sickn33):    $SOURCE_COUNT skills"
+    echo "  Installed locally:        $INSTALLED_COUNT skills"
+    
+    if [ "$INSTALLED_COUNT" -eq "$SOURCE_COUNT" ] && [ "$INSTALLED_COUNT" -gt 0 ]; then
+        echo ""
+        echo -e "  Status: ${GREEN}SYNCED${NC} - You have all available skills!"
+    elif [ "$INSTALLED_COUNT" -lt "$SOURCE_COUNT" ]; then
+        MISSING=$((SOURCE_COUNT - INSTALLED_COUNT))
+        echo ""
+        echo -e "  Status: ${YELLOW}PARTIAL${NC} - Missing $MISSING skills. Run setup again."
+    elif [ "$INSTALLED_COUNT" -eq 0 ]; then
+        echo ""
+        echo -e "  Status: ${RED}NOT INSTALLED${NC} - Run ./setup.sh to install skills."
+    else
+        echo ""
+        echo -e "  Status: ${GREEN}OK${NC}"
+    fi
+    
+    echo ""
+    echo -e "${GRAY}  Tip: Run './activate-skills.sh --verify' for detailed check${NC}"
+    echo "-----------------------------------------------------------"
+}
+
 show_completion() {
     echo ""
     echo "-----------------------------------------------------------"
@@ -368,6 +415,7 @@ case "$MODE" in
         install_global_rules
         set_global_optimizer_root
         cleanup_essentials
+        show_verification_report
         ;;
     full)
         install_skills
@@ -375,9 +423,11 @@ case "$MODE" in
         install_workflow
         install_global_rules
         set_global_optimizer_root
+        show_verification_report
         ;;
     update)
         install_skills
+        show_verification_report
         show_completion
         exit 0
         ;;
