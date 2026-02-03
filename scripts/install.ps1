@@ -231,6 +231,81 @@ function Install-RouterSkill {
     [Environment]::SetEnvironmentVariable("ANTIGRAVITY_OPTIMIZER_ROOT", $repoRoot.Path, "User")
 }
 
+function Repair-SkillYaml {
+    <#
+    .SYNOPSIS
+        Repairs broken YAML frontmatter in SKILL.md files.
+    .DESCRIPTION
+        The upstream skills repo has ~60+ files with invalid YAML that breaks Codex.
+        Common issues:
+        - Empty multi-line descriptions: "description: |" with no content
+        - Nested double quotes: description: "...says "hello"..."
+        This function auto-fixes these issues after skills are installed.
+    #>
+    
+    Write-Host ""
+    Write-Host "Validating skill files..." -ForegroundColor Gray
+    
+    $repaired = 0
+    $failed = 0
+    $skillDirs = @($skillsRoot, (Join-Path $repoRoot ".agent\skills"))
+    
+    foreach ($baseDir in $skillDirs) {
+        if (-not (Test-Path $baseDir)) { continue }
+        
+        $skillFiles = Get-ChildItem -Path $baseDir -Filter "SKILL.md" -Recurse -ErrorAction SilentlyContinue
+        
+        foreach ($file in $skillFiles) {
+            try {
+                $content = Get-Content $file.FullName -Raw -ErrorAction Stop
+                $originalContent = $content
+                $needsRepair = $false
+                
+                # Issue 1: Empty multi-line description followed by another field
+                # Pattern: "description: |\r\nsource:" or "description: |\nsource:"
+                if ($content -match 'description:\s*\|\s*[\r\n]+\s*[a-z_]+:') {
+                    # Extract the skill name for a generic description
+                    $skillName = $file.Directory.Name
+                    $content = $content -replace '(description:\s*)\|\s*([\r\n]+)', "`$1`"$skillName skill - no description provided.`"`$2"
+                    $needsRepair = $true
+                }
+                
+                # Issue 2: Nested double quotes in description
+                # Pattern: description: "...text "quoted text" more..."
+                # Fix: Replace inner quotes with single quotes
+                if ($content -match 'description:\s*"[^"]*"[^"]*"') {
+                    # Extract the description line and fix it
+                    $content = $content -replace '(description:\s*")([^"]*)"([^"]*)"([^"]*)"([^"]*)"([^"]*)"([^"]*)"([^"]*)"([^"]*)', '$1$2''$3''$4''$5''$6''$7''$8''$9'
+                    $content = $content -replace '(description:\s*")([^"]*)"([^"]*)"([^"]*)"([^"]*)"([^"]*)"([^"]*)', '$1$2''$3''$4''$5''$6''$7'
+                    $content = $content -replace '(description:\s*")([^"]*)"([^"]*)"([^"]*)"([^"]*)', '$1$2''$3''$4''$5'
+                    $content = $content -replace '(description:\s*")([^"]*)"([^"]*)"([^"]*)', '$1$2''$3''$4'
+                    $content = $content -replace '(description:\s*")([^"]*)"([^"]*)', '$1$2''$3'
+                    $needsRepair = $true
+                }
+                
+                if ($needsRepair -and $content -ne $originalContent) {
+                    Set-Content -Path $file.FullName -Value $content -NoNewline
+                    $repaired++
+                }
+            }
+            catch {
+                $failed++
+                Write-Verbose "Failed to process $($file.FullName): $_"
+            }
+        }
+    }
+    
+    if ($repaired -gt 0) {
+        Write-Host "[+] Repaired $repaired skill files with YAML issues" -ForegroundColor Green
+    } else {
+        Write-Host "[+] All skill files validated OK" -ForegroundColor Green
+    }
+    
+    if ($failed -gt 0) {
+        Write-Host "[!] Failed to process $failed files" -ForegroundColor Yellow
+    }
+}
+
 function Show-VerificationReport {
     Write-Host ""
     Write-Host "-----------------------------------------------------------" -ForegroundColor White
@@ -298,6 +373,7 @@ Ensure-SkillsRepo
 Install-Workflow
 Install-GlobalRules
 Install-RouterSkill
+Repair-SkillYaml
 Show-VerificationReport
 
 if ($AddPath) {
