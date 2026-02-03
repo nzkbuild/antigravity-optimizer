@@ -21,4 +21,4 @@ if (-not $python) {
     exit 1
 }
 
-python $scriptPath @Task
+python "$scriptPath" @Task
