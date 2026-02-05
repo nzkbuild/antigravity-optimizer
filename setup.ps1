@@ -53,7 +53,7 @@
 [CmdletBinding()]
 param(
     [Parameter()]
-    [ValidateSet('essentials', 'full', 'update')]
+    [ValidateSet('essentials', 'full', 'update', 'fix')]
     [string]$Mode,
     
     [Parameter()]
@@ -229,6 +229,125 @@ function Test-Prerequisites {
 # ============================================================================
 # CORE FUNCTIONS
 # ============================================================================
+
+function Invoke-SkillsFix {
+    <#
+    .SYNOPSIS
+        Repairs skills locally without network operations.
+    .DESCRIPTION
+        Use this when developing the optimizer itself.
+        Fixes YAML issues and validates skill files without cloning/updating.
+        Repairs both .agent/skills AND ~/.codex/skills folders.
+    #>
+    [CmdletBinding()]
+    param()
+    
+    Write-Host ""
+    Write-Step "Running local skills repair..." -Type Progress
+    
+    $agentSkillsDir = Join-Path $PSScriptRoot ".agent\skills"
+    $codexSkillsDir = Join-Path $env:USERPROFILE ".codex\skills"
+    $skillsIndex = Join-Path $agentSkillsDir "skills_index.json"
+    
+    # Check if skills exist
+    if (-not (Test-Path $agentSkillsDir)) {
+        Write-Step ".agent/skills folder not found. Run full install first." -Type Error
+        return $false
+    }
+    
+    if (-not (Test-Path $skillsIndex)) {
+        Write-Step "skills_index.json not found. Run full install first." -Type Error
+        return $false
+    }
+    
+    # Validate skills_index.json
+    try {
+        $skills = Get-Content $skillsIndex -Raw | ConvertFrom-Json
+        $skillCount = $skills.Count
+        Write-Step "Found $skillCount skills in index" -Type Success
+    }
+    catch {
+        Write-Step "skills_index.json is invalid JSON: $_" -Type Error
+        return $false
+    }
+    
+    # Repair YAML issues in SKILL.md files - both folders
+    Write-Host ""
+    Write-Step "Checking for YAML issues..." -Type Progress
+    
+    $repaired = 0
+    $dirsToRepair = @($agentSkillsDir)
+    
+    if (Test-Path $codexSkillsDir) {
+        $dirsToRepair += $codexSkillsDir
+        Write-Step "Also repairing: $codexSkillsDir" -Type Info
+    }
+    
+    foreach ($baseDir in $dirsToRepair) {
+        $skillFiles = Get-ChildItem -Path $baseDir -Filter "SKILL.md" -Recurse -ErrorAction SilentlyContinue
+        
+        foreach ($file in $skillFiles) {
+            try {
+                $content = Get-Content $file.FullName -Raw -ErrorAction Stop
+                $originalContent = $content
+                $needsRepair = $false
+                
+                # Issue 1: Empty multi-line description
+                if ($content -match 'description:\s*\|\s*[\r\n]+\s*[a-z_]+:') {
+                    $skillName = $file.Directory.Name
+                    $content = $content -replace '(description:\s*)\|\s*([\r\n]+)', "`$1`"$skillName skill - no description provided.`"`$2"
+                    $needsRepair = $true
+                }
+                
+                # Issue 2: Nested double quotes
+                $maxIterations = 20
+                $iteration = 0
+                while ($content -match '(description:\s*"[^"]*)"([^"]*)"' -and $iteration -lt $maxIterations) {
+                    $content = $content -replace '(description:\s*"[^"]*)"([^"]*)"', '$1''$2'''
+                    $needsRepair = $true
+                    $iteration++
+                }
+                
+                # Issue 3: Mismatched quotes - starts with " ends with '
+                # Pattern: description: "...text'  (before source:)
+                if ($content -match "description:\s*`"[^`"]*'(\r?\n)source:") {
+                    $content = $content -replace "(description:\s*`"[^`"]*)'(\r?\n)(source:)", '$1"$2$3'
+                    $needsRepair = $true
+                }
+                
+                # Issue 4: Missing description
+                if ($content -match '^---\s*[\r\n]+name:\s*[^\r\n]+[\r\n]+(?!description:)' -and $content -notmatch 'description:') {
+                    $skillName = $file.Directory.Name
+                    $content = $content -replace '(^---\s*[\r\n]+name:\s*[^\r\n]+)([\r\n]+)', "`$1`r`ndescription: `"$skillName skill`"`$2"
+                    $needsRepair = $true
+                }
+                
+                if ($needsRepair -and $content -ne $originalContent) {
+                    Set-Content -Path $file.FullName -Value $content -NoNewline
+                    $repaired++
+                }
+            }
+            catch {
+                Write-Verbose "Failed to process $($file.FullName): $_"
+            }
+        }
+    }
+    
+    if ($repaired -gt 0) {
+        Write-Step "Repaired $repaired skill files" -Type Success
+    } else {
+        Write-Step "All skill files OK" -Type Success
+    }
+    
+    # Show summary
+    Write-Host ""
+    Write-Color "-----------------------------------------------------------" $script:Colors.White
+    Write-Step "Skills Status: $skillCount skills repaired across $($dirsToRepair.Count) folders" -Type Info
+    Write-Color "-----------------------------------------------------------" $script:Colors.White
+    
+    return $true
+}
+
 
 function Install-Skills {
     [CmdletBinding()]
@@ -433,7 +552,14 @@ function Show-Menu {
     Write-Host "      Best for: Quick updates"
     Write-Host ""
     
-    return Read-Host "Enter selection [1/2/3]"
+    Write-Color "  [4] Fix/Repair Skills" $script:Colors.Yellow
+    Write-Host "      What:     Fix YAML issues locally (no network)"
+    Write-Host "      Takes:    ~2 seconds"
+    Write-Host "      Best for: " -NoNewline
+    Write-Color "Developers working on this project" $script:Colors.Gray
+    Write-Host ""
+    
+    return Read-Host "Enter selection [1/2/3/4]"
 }
 
 # ============================================================================
@@ -463,6 +589,7 @@ try {
                 "1" { 'essentials' }
                 "2" { 'full' }
                 "3" { 'update' }
+                "4" { 'fix' }
                 default { 'essentials' }
             }
         }
@@ -497,6 +624,14 @@ try {
         'update' {
             if (-not (Install-Skills)) { exit 1 }
             Show-Completion
+            if (-not $Silent) { Pause }
+            exit 0
+        }
+        
+        'fix' {
+            if (-not (Invoke-SkillsFix)) { exit 1 }
+            Write-Host ""
+            Write-Step "Fix complete!" -Type Success
             if (-not $Silent) { Pause }
             exit 0
         }
