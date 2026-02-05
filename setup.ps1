@@ -179,6 +179,7 @@ function Show-WhatGetsInstalled {
     Write-Host "                        |"
     Write-Host "  |    Makes the command work (global or workspace)     |"
     Write-Host "  |    -> $env:USERPROFILE\.gemini\...\workflows\" -ForegroundColor Gray
+    Write-Host "  |    -> .gemini\workflows\ (workspace)" -ForegroundColor Gray
     Write-Host "  |    -> You choose: Global or Workspace only          |"
     Write-Host "  +-----------------------------------------------------+"
     Write-Host "  | " -NoNewline
@@ -372,6 +373,7 @@ function Install-Skills {
         Write-Color "Workflow install location?" $script:Colors.Cyan
         Write-Host "  [1] Global - Works in all projects (recommended)"
         Write-Host "  [2] Workspace - This project only"
+        Write-Host "  Tip: Keep workflow scope aligned with rules scope." -ForegroundColor Gray
         $wfChoice = Read-Host "Choose [1/2]"
         if ($wfChoice -eq "2") {
             $workflowScope = "workspace"
@@ -508,6 +510,10 @@ Your optimizer is ready. Skills have been installed.
 
 ## Updates
 Run ``.\setup.ps1`` again to update skills.
+
+## Notes
+Feedback memory: ``~/.codex/.router_feedback.json``
+Workflow scope: global or ``.gemini\workflows\`` (workspace)
 
 ---
 *Setup completed: $(Get-Date -Format 'yyyy-MM-dd HH:mm')*

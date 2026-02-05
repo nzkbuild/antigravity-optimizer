@@ -17,10 +17,12 @@ if sys.version_info < (3, 6):
 
 DEFAULT_MAX_SKILLS = 3
 MAX_SKILLS_CAP = 8  # Match GEMINI.md tier system (complex tasks: 6-8 skills)
+HARD_MAX_SKILLS = 5  # Enforced cap for router output
 MAX_TASK_LENGTH = 2000  # Prevent extremely long task text
 MIN_SCORE = 2
 RELATIVE_THRESHOLD = 0.7
 REPO_ROOT = Path(__file__).resolve().parents[1]
+HEAVY_SKILLS = {"loki-mode"}
 
 def resolve_skills_root():
     env_root = os.getenv("ANTIGRAVITY_SKILLS_ROOT", "").strip()
@@ -95,6 +97,16 @@ SYNONYM_MAP = {
     "cli": "command",
 }
 
+SECURITY_KEYWORDS = {
+    "security", "vulnerability", "pentest", "penetration", "red-team", "redteam",
+    "xss", "sqli", "sql-injection", "csrf", "bug-bounty", "owasp", "audit"
+}
+
+UI_KEYWORDS = {
+    "ui", "ux", "design", "landing", "frontend", "website", "page", "component",
+    "css", "style", "layout"
+}
+
 def expand_tokens(tokens):
     expanded = list(tokens)
     for token in tokens:
@@ -102,6 +114,15 @@ def expand_tokens(tokens):
         if mapped and mapped not in expanded:
             expanded.append(mapped)
     return expanded
+
+
+def should_filter_security(task_tokens, skill_name):
+    task_has_security = any(t in SECURITY_KEYWORDS for t in task_tokens)
+    task_is_ui = any(t in UI_KEYWORDS for t in task_tokens)
+    if task_has_security or not task_is_ui:
+        return False
+    name = (skill_name or "").lower()
+    return any(k in name for k in SECURITY_KEYWORDS)
 
 
 def load_index(index_path):
@@ -149,39 +170,65 @@ def score_skill(skill, task_tokens, feedback, bundle_set):
     path_tokens = set(tokenize(path))
 
     score = 0
+    reasons = []
     for token in task_tokens:
         if token in name_tokens or token in path_tokens:
             score += 3
+            if f"token:{token}" not in reasons:
+                reasons.append(f"token:{token}")
         if token in desc_tokens:
             score += 1
+            if f"desc:{token}" not in reasons:
+                reasons.append(f"desc:{token}")
 
     if name in bundle_set:
         score += 5
+        reasons.append("bundle:+5")
 
     boost = feedback.get(name)
     if isinstance(boost, (int, float)):
         score += boost
-    return score, name
+        reasons.append(f"feedback:+{boost}")
+    return score, name, reasons
 
 
-def pick_skills(skills, task, max_skills, feedback, bundle_set):
+def allow_heavy_skill(task_text):
+    task_text = (task_text or "").lower()
+    keywords = ["loki", "autonomous", "multi-agent", "multi agent", "agents", "swarm"]
+    return any(k in task_text for k in keywords)
+
+
+def pick_skills(skills, task, max_skills, feedback, bundle_set, explain=False):
     task_tokens = expand_tokens(tokenize(task))
+    allow_heavy = allow_heavy_skill(task)
     scored = []
+    skipped_heavy = []
+    skipped_filtered = []
     for skill in skills:
-        score, name = score_skill(skill, task_tokens, feedback, bundle_set)
-        scored.append((score, name))
+        name = skill.get("id") or skill.get("name") or ""
+        if (name in HEAVY_SKILLS) and (not allow_heavy):
+            skipped_heavy.append(name)
+            continue
+        if should_filter_security(task_tokens, name):
+            skipped_filtered.append(name)
+            continue
+        score, skill_name, reasons = score_skill(skill, task_tokens, feedback, bundle_set)
+        scored.append((score, skill_name, reasons))
 
     scored.sort(key=lambda item: item[0], reverse=True)
     top_score = scored[0][0] if scored else 0
 
     picked = []
-    for score, name in scored:
+    explanations = []
+    for score, name, reasons in scored:
         if len(picked) >= max_skills:
             break
         if score <= 0:
             continue
         if score >= max(MIN_SCORE, int(top_score * RELATIVE_THRESHOLD)):
             picked.append(name)
+            if explain:
+                explanations.append((name, score, reasons))
 
     if not picked:
         fallback = next((s.get("id") for s in skills if s.get("id") == "brainstorming"), None)
@@ -190,7 +237,7 @@ def pick_skills(skills, task, max_skills, feedback, bundle_set):
         else:
             picked = [scored[0][1]] if scored else []
 
-    return picked
+    return picked, explanations, skipped_heavy, skipped_filtered
 
 
 def normalize_choice(value, options, default):
@@ -316,12 +363,17 @@ def parse_args():
         metavar="SKILL_ID",
         help="Show detailed information about a specific skill",
     )
+    parser.add_argument(
+        "--why",
+        action="store_true",
+        help="Explain why each skill was selected (printed to stderr)",
+    )
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    max_skills = max(1, min(args.max, MAX_SKILLS_CAP))
+    max_skills = max(1, min(args.max, MAX_SKILLS_CAP, HARD_MAX_SKILLS))
     task = " ".join(args.task or []).strip()
 
     index_path = SKILLS_ROOT / "skills_index.json"
@@ -476,7 +528,9 @@ def main():
         if missing_bundle_skills:
             print(f"Warning: Bundle '{args.bundle}' references skills not in index: {', '.join(sorted(missing_bundle_skills))}", file=sys.stderr)
     
-    picked = pick_skills(skills, task, max_skills, feedback, bundle_set)
+    picked, explanations, skipped_heavy, skipped_filtered = pick_skills(
+        skills, task, max_skills, feedback, bundle_set, explain=args.why
+    )
 
     if args.feedback:
         for name in args.feedback:
@@ -489,6 +543,20 @@ def main():
     output_lines.append(task)
     output_text = "\n".join(output_lines)
     print(output_text)
+    if args.why:
+        if skipped_heavy:
+            print(
+                f"[why] Skipped heavy skills: {', '.join(sorted(set(skipped_heavy)))}",
+                file=sys.stderr,
+            )
+        if skipped_filtered:
+            print(
+                f"[why] Filtered skills (context mismatch): {', '.join(sorted(set(skipped_filtered)))}",
+                file=sys.stderr,
+            )
+        for name, score, reasons in explanations:
+            reason_text = ", ".join(reasons) if reasons else "no strong matches"
+            print(f"[why] {name}: score={score} ({reason_text})", file=sys.stderr)
     if not args.no_clipboard:
         if not copy_to_clipboard(output_text):
             print("Warning: clipboard copy failed.", file=sys.stderr)
