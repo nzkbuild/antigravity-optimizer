@@ -276,6 +276,7 @@ function Invoke-SkillsFix {
     Write-Step "Checking for YAML issues..." -Type Progress
     
     $repaired = 0
+    $failed = 0
     $dirsToRepair = @($agentSkillsDir)
     
     if (Test-Path $codexSkillsDir) {
@@ -292,54 +293,22 @@ function Invoke-SkillsFix {
                 $originalContent = $content
                 $needsRepair = $false
                 
-                # Issue 1: Empty multi-line description
+                # SAFE FIX 1: Description line ending with ' instead of "
+                # Only fix if line starts with description: " and ends with '
+                # Match: description: "text here'  followed by newline
+                if ($content -match '(?m)^description:\s*"[^"\r\n]*''$') {
+                    $content = $content -replace '(?m)^(description:\s*"[^"\r\n]*)''$', '$1"'
+                    $needsRepair = $true
+                }
+                
+                # SAFE FIX 2: Empty multi-line description (description: |)
                 if ($content -match 'description:\s*\|\s*[\r\n]+\s*[a-z_]+:') {
                     $skillName = $file.Directory.Name
-                    $content = $content -replace '(description:\s*)\|\s*([\r\n]+)', "`$1`"$skillName skill - no description provided.`"`$2"
+                    $content = $content -replace '(description:\s*)\|\s*([\r\n]+)', "`$1`"$skillName skill`"`$2"
                     $needsRepair = $true
                 }
                 
-                # Issue 2: Nested double quotes
-                $maxIterations = 20
-                $iteration = 0
-                while ($content -match '(description:\s*"[^"]*)"([^"]*)"' -and $iteration -lt $maxIterations) {
-                    $content = $content -replace '(description:\s*"[^"]*)"([^"]*)"', '$1''$2'''
-                    $needsRepair = $true
-                    $iteration++
-                }
-                
-                # Issue 3: Mismatched quotes - starts with " ends with '
-                # Pattern: description: "...text'  (before source:)
-                if ($content -match "description:\s*`"[^`"]*'(\r?\n)source:") {
-                    $content = $content -replace "(description:\s*`"[^`"]*)'(\r?\n)(source:)", '$1"$2$3'
-                    $needsRepair = $true
-                }
-                
-                # Issue 5: Description ending with ' before --- or any YAML field
-                if ($content -match "description:\s*`"[^`"]+'\s*(\r?\n)(---|[a-z_]+:)") {
-                    $content = $content -replace "(description:\s*`"[^`"]+)'\s*(\r?\n)(---|[a-z_]+:)", '$1"$2$3'
-                    $needsRepair = $true
-                }
-                
-                # Issue 6: source/license/risk fields with mismatched quotes ('.....")
-                if ($content -match "(source|license|risk):\s*'[^']+`"") {
-                    $content = $content -replace "((source|license|risk):\s*)'([^']+)`"", '$1"$3"'
-                    $needsRepair = $true
-                }
-                
-                # Issue 7: Any field starting with ' (normalize to ")
-                if ($content -match "(source|license):\s*'([^']+)'") {
-                    $content = $content -replace "((source|license):\s*)'([^']+)'", '$1"$3"'
-                    $needsRepair = $true
-                }
-                
-                # Issue 8: metadata fields with mismatched quotes
-                if ($content -match "argument-hint:\s*'[^']+`"") {
-                    $content = $content -replace "(argument-hint:\s*)'([^']+)`"", '$1"$2"'
-                    $needsRepair = $true
-                }
-                
-                # Issue 4: Missing description
+                # SAFE FIX 3: Missing description entirely
                 if ($content -match '^---\s*[\r\n]+name:\s*[^\r\n]+[\r\n]+(?!description:)' -and $content -notmatch 'description:') {
                     $skillName = $file.Directory.Name
                     $content = $content -replace '(^---\s*[\r\n]+name:\s*[^\r\n]+)([\r\n]+)', "`$1`r`ndescription: `"$skillName skill`"`$2"
@@ -347,12 +316,21 @@ function Invoke-SkillsFix {
                 }
                 
                 if ($needsRepair -and $content -ne $originalContent) {
-                    Set-Content -Path $file.FullName -Value $content -NoNewline
-                    $repaired++
+                    # Validate the fix didn't break the YAML structure
+                    # Check that we still have proper --- delimiters
+                    if ($content -match '^---' -and $content -match '[\r\n]---[\r\n]') {
+                        Set-Content -Path $file.FullName -Value $content -NoNewline
+                        $repaired++
+                    } else {
+                        # Fix would break structure, skip
+                        $failed++
+                        Write-Verbose "Skipped $($file.Name) - fix would break YAML structure"
+                    }
                 }
             }
             catch {
                 Write-Verbose "Failed to process $($file.FullName): $_"
+                $failed++
             }
         }
     }
@@ -363,10 +341,14 @@ function Invoke-SkillsFix {
         Write-Step "All skill files OK" -Type Success
     }
     
+    if ($failed -gt 0) {
+        Write-Step "$failed files could not be repaired automatically" -Type Warning
+    }
+    
     # Show summary
     Write-Host ""
     Write-Color "-----------------------------------------------------------" $script:Colors.White
-    Write-Step "Skills Status: $skillCount skills repaired across $($dirsToRepair.Count) folders" -Type Info
+    Write-Step "Skills Status: $skillCount skills across $($dirsToRepair.Count) folders" -Type Info
     Write-Color "-----------------------------------------------------------" $script:Colors.White
     
     return $true
