@@ -171,7 +171,7 @@ For non-trivial tasks, prefer routing with the optimizer instead of manual skill
 - IDE: /activate-skills <task>
 - CLI: @activate-skills "<task>" or activate-skills "<task>"
 
-The router outputs the /skill line + task line. Use that output as-is.
+The router should auto-load the suggested skills and execute the task end-to-end.
 If the router is unavailable, fall back to manual skill loading below.
 
 Guardrails:

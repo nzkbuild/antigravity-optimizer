@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Improved rules menu**: Checkmarks/X marks show pros/cons, clear recommendations
 - **Better explanations**: Each choice explains when to use  it and what it does
 
+## [1.3.2] - 2026-02-05
+
+### Added
+- **Auto-execute router skill**: New `activate-skills` skill runs routing and applies skills without copy/paste
+
+### Changed
+- **README guidance**: Clarifies `/activate-skills` now runs end-to-end
+- **Global rules text**: Aligns router behavior with auto-execute flow
+
 ## [1.3.0] - 2026-02-03
 
 ### Added

@@ -63,7 +63,7 @@ Choose your mode:
 
 ---
 
-> **For Vibe Coders**: After running the optimizer, just paste the `/skill` output into your chat. The AI will do the rest!
+> **Now**: `/activate-skills` auto-routes and executes the task end-to-end (no copy/paste).
 
 ---
 
