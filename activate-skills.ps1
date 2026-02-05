@@ -15,22 +15,38 @@ if (-not (Test-Path $scriptPath)) {
 }
 
 # Check for Python availability (prefer Windows launcher, then python3, then python)
+function Test-PythonCmd {
+    param(
+        [Parameter(Mandatory)] [string]$Exe,
+        [string[]]$Args = @()
+    )
+    try {
+        $p = Start-Process -FilePath $Exe -ArgumentList ($Args + @("-V")) -NoNewWindow -PassThru -Wait -ErrorAction Stop
+        return ($p.ExitCode -eq 0)
+    } catch {
+        return $false
+    }
+}
+
 $pythonExe = $null
 $pythonArgs = @()
 
-$pyLauncher = Get-Command py -ErrorAction SilentlyContinue
-if ($pyLauncher) {
-    $pythonExe = "py"
-    $pythonArgs = @("-3")
-} else {
-    $python3 = Get-Command python3 -ErrorAction SilentlyContinue
-    if ($python3) {
+if (Get-Command py -ErrorAction SilentlyContinue) {
+    if (Test-PythonCmd -Exe "py" -Args @("-3")) {
+        $pythonExe = "py"
+        $pythonArgs = @("-3")
+    }
+}
+
+if (-not $pythonExe -and (Get-Command python3 -ErrorAction SilentlyContinue)) {
+    if (Test-PythonCmd -Exe "python3") {
         $pythonExe = "python3"
-    } else {
-        $python = Get-Command python -ErrorAction SilentlyContinue
-        if ($python) {
-            $pythonExe = "python"
-        }
+    }
+}
+
+if (-not $pythonExe -and (Get-Command python -ErrorAction SilentlyContinue)) {
+    if (Test-PythonCmd -Exe "python") {
+        $pythonExe = "python"
     }
 }
 

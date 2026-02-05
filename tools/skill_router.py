@@ -78,6 +78,31 @@ def normalize(text):
 def tokenize(text):
     return [t for t in normalize(text).split() if t]
 
+# Lightweight synonym normalization to improve routing recall.
+SYNONYM_MAP = {
+    "auth": "authentication",
+    "oauth": "authentication",
+    "login": "authentication",
+    "db": "database",
+    "sql": "database",
+    "ui": "frontend",
+    "ux": "frontend",
+    "perf": "performance",
+    "opt": "optimization",
+    "ops": "devops",
+    "k8s": "kubernetes",
+    "sec": "security",
+    "cli": "command",
+}
+
+def expand_tokens(tokens):
+    expanded = list(tokens)
+    for token in tokens:
+        mapped = SYNONYM_MAP.get(token)
+        if mapped and mapped not in expanded:
+            expanded.append(mapped)
+    return expanded
+
 
 def load_index(index_path):
     try:
@@ -140,7 +165,7 @@ def score_skill(skill, task_tokens, feedback, bundle_set):
 
 
 def pick_skills(skills, task, max_skills, feedback, bundle_set):
-    task_tokens = tokenize(task)
+    task_tokens = expand_tokens(tokenize(task))
     scored = []
     for skill in skills:
         score, name = score_skill(skill, task_tokens, feedback, bundle_set)

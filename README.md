@@ -9,7 +9,7 @@
 
 The **Antigravity Optimizer** automatically picks the right AI skills for your task. 600+ skills, zero memorization.
 
-**Now:** it routes tasks, learns from feedback, and stays out of your way.
+**Now:** precise routing, local feedback memory, zero ceremony.
 
 > **Credits**: Skills are from **[sickn33's Antigravity Awesome Skills](https://github.com/sickn33/antigravity-awesome-skills)**. We just make them easier to use!
 
