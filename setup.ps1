@@ -252,26 +252,37 @@ function Invoke-SkillsFix {
     $codexSkillsDir = Join-Path $env:USERPROFILE ".codex\skills"
     $skillsIndex = Join-Path $agentSkillsDir "skills_index.json"
     
-    # Check if skills exist
-    if (-not (Test-Path $agentSkillsDir)) {
-        Write-Step ".agent/skills folder not found. Run full install first." -Type Error
+    $dirsToRepair = @()
+    
+    if (Test-Path $agentSkillsDir) {
+        $dirsToRepair += $agentSkillsDir
+    } else {
+        Write-Step ".agent/skills folder not found. Will skip local repo skills." -Type Warning
+    }
+    
+    if (Test-Path $codexSkillsDir) {
+        $dirsToRepair += $codexSkillsDir
+    } else {
+        Write-Step "$codexSkillsDir not found. Will skip Codex skills." -Type Warning
+    }
+    
+    if ($dirsToRepair.Count -eq 0) {
+        Write-Step "No skills folders found to repair. Run full install first." -Type Error
         return $false
     }
     
-    if (-not (Test-Path $skillsIndex)) {
-        Write-Step "skills_index.json not found. Run full install first." -Type Error
-        return $false
-    }
-    
-    # Validate skills_index.json
-    try {
-        $skills = Get-Content $skillsIndex -Raw | ConvertFrom-Json
-        $skillCount = $skills.Count
-        Write-Step "Found $skillCount skills in index" -Type Success
-    }
-    catch {
-        Write-Step "skills_index.json is invalid JSON: $_" -Type Error
-        return $false
+    # Validate skills_index.json if present
+    if (Test-Path $skillsIndex) {
+        try {
+            $skills = Get-Content $skillsIndex -Raw | ConvertFrom-Json
+            $skillCount = $skills.Count
+            Write-Step "Found $skillCount skills in index" -Type Success
+        }
+        catch {
+            Write-Step "skills_index.json is invalid JSON: $_" -Type Warning
+        }
+    } else {
+        Write-Step "skills_index.json not found. Skipping index validation." -Type Warning
     }
     
     # Repair YAML issues in SKILL.md files - both folders
@@ -280,12 +291,6 @@ function Invoke-SkillsFix {
     
     $repaired = 0
     $failed = 0
-    $dirsToRepair = @($agentSkillsDir)
-    
-    if (Test-Path $codexSkillsDir) {
-        $dirsToRepair += $codexSkillsDir
-        Write-Step "Also repairing: $codexSkillsDir" -Type Info
-    }
     
     foreach ($baseDir in $dirsToRepair) {
         $skillFiles = Get-ChildItem -Path $baseDir -Filter "SKILL.md" -Recurse -ErrorAction SilentlyContinue
@@ -301,6 +306,13 @@ function Invoke-SkillsFix {
                 # Match: description: "text here'  followed by newline
                 if ($content -match '(?m)^description:\s*"[^"\r\n]*''$') {
                     $content = $content -replace '(?m)^(description:\s*"[^"\r\n]*)''$', '$1"'
+                    $needsRepair = $true
+                }
+                
+                # SAFE FIX 1b: Description line missing closing double-quote
+                # Match: description: "text here  (no closing quote)
+                if ($content -match '(?m)^description:\s*"[^"\r\n]*$') {
+                    $content = $content -replace '(?m)^(description:\s*"[^"\r\n]*)$', '$1"'
                     $needsRepair = $true
                 }
                 
