@@ -303,16 +303,16 @@ function Invoke-SkillsFix {
                 
                 # SAFE FIX 1: Description line ending with ' instead of "
                 # Only fix if line starts with description: " and ends with '
-                # Match: description: "text here'  followed by newline
-                if ($content -match '(?m)^description:\s*"[^"\r\n]*''$') {
-                    $content = $content -replace '(?m)^(description:\s*"[^"\r\n]*)''$', '$1"'
+                # Match: description: "text here'  followed by newline (allow CR)
+                if ($content -match '(?m)^description:\s*"[^"\n]*''\r?$') {
+                    $content = $content -replace '(?m)^(description:\s*"[^"\n]*)''\r?$', '$1"'
                     $needsRepair = $true
                 }
                 
                 # SAFE FIX 1b: Description line missing closing double-quote
-                # Match: description: "text here  (no closing quote)
-                if ($content -match '(?m)^description:\s*"[^"\r\n]*$') {
-                    $content = $content -replace '(?m)^(description:\s*"[^"\r\n]*)$', '$1"'
+                # Match: description: "text here  (no closing quote, allow CR)
+                if ($content -match '(?m)^description:\s*"[^"\n]*\r?$') {
+                    $content = $content -replace '(?m)^(description:\s*"[^"\n]*)\r?$', '$1"'
                     $needsRepair = $true
                 }
                 
@@ -328,6 +328,38 @@ function Invoke-SkillsFix {
                     $skillName = $file.Directory.Name
                     $content = $content -replace '(^---\s*[\r\n]+name:\s*[^\r\n]+)([\r\n]+)', "`$1`r`ndescription: `"$skillName skill`"`$2"
                     $needsRepair = $true
+                }
+                
+                # SAFE FIX 4: Frontmatter unclosed quotes on any key
+                # Fixes lines like: source: 'https://example.com  (missing closing ')
+                $fmMatch = [regex]::Match($content, '(?s)^(---\s*\r?\n)(.*?)(\r?\n---\s*\r?\n)')
+                if ($fmMatch.Success) {
+                    $fm = $fmMatch.Groups[2].Value
+                    $fmLines = $fm -split "`n"
+                    $fmChanged = $false
+                    for ($i = 0; $i -lt $fmLines.Count; $i++) {
+                        $line = $fmLines[$i].TrimEnd("`r")
+                        if ($line -match '^\s*[A-Za-z0-9_-]+:\s*''[^'']*"$') {
+                            $fmLines[$i] = $line.Substring(0, $line.Length - 1) + "'"
+                            $fmChanged = $true
+                        } elseif ($line -match '^\s*[A-Za-z0-9_-]+:\s*"[^"]*''$') {
+                            $fmLines[$i] = $line.Substring(0, $line.Length - 1) + '"'
+                            $fmChanged = $true
+                        } elseif ($line -match '^\s*[A-Za-z0-9_-]+:\s*''[^'']*$') {
+                            $fmLines[$i] = $line + "'"
+                            $fmChanged = $true
+                        } elseif ($line -match '^\s*[A-Za-z0-9_-]+:\s*"[^"]*$') {
+                            $fmLines[$i] = $line + '"'
+                            $fmChanged = $true
+                        }
+                    }
+                    if ($fmChanged) {
+                        $newFm = $fmLines -join "`n"
+                        $restStart = $fmMatch.Index + $fmMatch.Length
+                        $rest = if ($restStart -lt $content.Length) { $content.Substring($restStart) } else { "" }
+                        $content = $fmMatch.Groups[1].Value + $newFm + $fmMatch.Groups[3].Value + $rest
+                        $needsRepair = $true
+                    }
                 }
                 
                 if ($needsRepair -and $content -ne $originalContent) {
