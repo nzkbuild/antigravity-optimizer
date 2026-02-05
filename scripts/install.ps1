@@ -4,6 +4,8 @@ param(
     [string]$SkillsCache,
     [switch]$SkipSkills,
     [switch]$SkipWorkflow,
+    [ValidateSet('global', 'workspace')]
+    [string]$WorkflowScope = "global",
     [switch]$InstallGlobalRules,
     [switch]$AddPath,
     [switch]$Force
@@ -16,8 +18,6 @@ $skillsCache = if ($SkillsCache) { $SkillsCache } else { Join-Path $repoRoot ".c
 $skillsIndex = Join-Path $skillsCache "skills_index.json"
 $routerSkillSource = Join-Path $repoRoot "skills\activate-skills"
 $routerSkillDest = Join-Path $skillsRoot "activate-skills"
-$workflowDir = Join-Path $env:USERPROFILE ".gemini\antigravity\global_workflows"
-$workflowTarget = Join-Path $workflowDir "activate-skills.md"
 $templatePath = Join-Path $repoRoot "workflows\activate-skills.md"
 $globalRulesPath = Join-Path $env:USERPROFILE ".gemini\GEMINI.md"
 
@@ -141,6 +141,13 @@ function Install-Workflow {
         exit 1
     }
 
+    if ($WorkflowScope -eq "workspace") {
+        $workflowDir = Join-Path $repoRoot ".gemini\workflows"
+    } else {
+        $workflowDir = Join-Path $env:USERPROFILE ".gemini\antigravity\global_workflows"
+    }
+    $workflowTarget = Join-Path $workflowDir "activate-skills.md"
+
     New-Item -ItemType Directory -Path $workflowDir -Force | Out-Null
 
     # Copy template as-is (no path replacement needed - template is now dynamic)
@@ -166,6 +173,14 @@ For non-trivial tasks, prefer routing with the optimizer instead of manual skill
 
 The router outputs the /skill line + task line. Use that output as-is.
 If the router is unavailable, fall back to manual skill loading below.
+
+Guardrails:
+- Cap skills to 3–5 (drop extras).
+- Avoid heavy skills (e.g., loki-mode) unless explicitly requested.
+- Prefer domain-matching skills over generic ones.
+
+Feedback:
+- Local memory: ~/.codex/.router_feedback.json
 
 "@
 

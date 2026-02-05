@@ -68,7 +68,13 @@ For each skill ID, read its SKILL.md file from:
 
 Read the first 300-500 lines of each skill to understand its instructions.
 
-### Step 5: Execute the Task
+### Step 5: Apply Routing Guardrails
+
+- Cap skills to **3–5** (drop extras if needed).
+- If the router suggests heavy/overkill skills (e.g., `loki-mode`), only keep them when the user explicitly asked for autonomous multi‑agent execution. Otherwise drop them.
+- Prefer skills that directly match the task’s domain (design, backend, security, etc.).
+
+### Step 6: Execute the Task
 
 Apply the loaded skill instructions to complete the user's task. The skills provide:
 
@@ -78,13 +84,21 @@ Apply the loaded skill instructions to complete the user's task. The skills prov
 
 Combine insights from all loaded skills to deliver a high-quality result.
 
-### Step 6: Report What You Used
+### Step 7: Report What You Used
 
 After completing the task, briefly mention which skills were applied:
 
 ```text
 [OK] Task completed using: frontend-design, ui-ux-pro-max, page-cro
 ```
+
+## Feedback Memory
+
+The router stores feedback locally:
+
+- `~/.codex/.router_feedback.json`
+
+If you use `--feedback`, it will boost future routing decisions.
 
 ## Special Commands
 

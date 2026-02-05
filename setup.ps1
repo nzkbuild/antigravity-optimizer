@@ -74,6 +74,7 @@ $script:Version = "1.3.2"
 $script:StartTime = Get-Date
 $script:ExitCode = 0
 $script:RepoRoot = $PSScriptRoot
+$script:WorkflowScope = "global"
 
 # Colors
 $script:Colors = @{
@@ -176,8 +177,9 @@ function Show-WhatGetsInstalled {
     Write-Host "  | " -NoNewline
     Write-Color "[2] /activate-skills Command" $script:Colors.Cyan -NoNewline
     Write-Host "                        |"
-    Write-Host "  |    Makes the command work globally                  |"
+    Write-Host "  |    Makes the command work (global or workspace)     |"
     Write-Host "  |    -> $env:USERPROFILE\.gemini\...\workflows\" -ForegroundColor Gray
+    Write-Host "  |    -> You choose: Global or Workspace only          |"
     Write-Host "  +-----------------------------------------------------+"
     Write-Host "  | " -NoNewline
     Write-Color "[3] AI Rules (Optional)" $script:Colors.Cyan -NoNewline
@@ -363,9 +365,24 @@ function Install-Skills {
     Write-Step "Installing Skills..." -Type Progress
     
     $installScript = Join-Path $PSScriptRoot "scripts\install.ps1"
+    $workflowScope = $script:WorkflowScope
+    
+    if (-not $Silent) {
+        Write-Host ""
+        Write-Color "Workflow install location?" $script:Colors.Cyan
+        Write-Host "  [1] Global - Works in all projects (recommended)"
+        Write-Host "  [2] Workspace - This project only"
+        $wfChoice = Read-Host "Choose [1/2]"
+        if ($wfChoice -eq "2") {
+            $workflowScope = "workspace"
+        } else {
+            $workflowScope = "global"
+        }
+        $script:WorkflowScope = $workflowScope
+    }
     
     try {
-        & $installScript -InstallGlobalRules
+        & $installScript -InstallGlobalRules -WorkflowScope $workflowScope
         
         if ($LASTEXITCODE -ne 0) {
             throw "Skills installation failed with exit code $LASTEXITCODE"
