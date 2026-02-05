@@ -315,6 +315,30 @@ function Invoke-SkillsFix {
                     $needsRepair = $true
                 }
                 
+                # Issue 5: Description ending with ' before --- or any YAML field
+                if ($content -match "description:\s*`"[^`"]+'\s*(\r?\n)(---|[a-z_]+:)") {
+                    $content = $content -replace "(description:\s*`"[^`"]+)'\s*(\r?\n)(---|[a-z_]+:)", '$1"$2$3'
+                    $needsRepair = $true
+                }
+                
+                # Issue 6: source/license/risk fields with mismatched quotes ('.....")
+                if ($content -match "(source|license|risk):\s*'[^']+`"") {
+                    $content = $content -replace "((source|license|risk):\s*)'([^']+)`"", '$1"$3"'
+                    $needsRepair = $true
+                }
+                
+                # Issue 7: Any field starting with ' (normalize to ")
+                if ($content -match "(source|license):\s*'([^']+)'") {
+                    $content = $content -replace "((source|license):\s*)'([^']+)'", '$1"$3"'
+                    $needsRepair = $true
+                }
+                
+                # Issue 8: metadata fields with mismatched quotes
+                if ($content -match "argument-hint:\s*'[^']+`"") {
+                    $content = $content -replace "(argument-hint:\s*)'([^']+)`"", '$1"$2"'
+                    $needsRepair = $true
+                }
+                
                 # Issue 4: Missing description
                 if ($content -match '^---\s*[\r\n]+name:\s*[^\r\n]+[\r\n]+(?!description:)' -and $content -notmatch 'description:') {
                     $skillName = $file.Directory.Name
