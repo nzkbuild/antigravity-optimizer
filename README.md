@@ -9,6 +9,8 @@
 
 The **Antigravity Optimizer** automatically picks the right AI skills for your task. 600+ skills, zero memorization.
 
+**Now:** it routes tasks, learns from feedback, and stays out of your way.
+
 > **Credits**: Skills are from **[sickn33's Antigravity Awesome Skills](https://github.com/sickn33/antigravity-awesome-skills)**. We just make them easier to use!
 
 ---
@@ -71,6 +73,7 @@ Choose your mode:
 |-----------|-------------|
 | **626 Skills** | Complete AI skills library |
 | **Smart Routing** | Picks the best skills for your task |
+| **Feedback Memory** | Remembers what worked (`~/.codex/.router_feedback.json`) |
 | **Global Workflow** | `/activate-skills` works in any project |
 | **Global Rules** | AI knows how to route automatically |
 | **Cross-Platform** | Windows, Linux, macOS |
@@ -111,6 +114,10 @@ Get-Help .\setup.ps1 -Full
 # Debug mode
 .\setup.ps1 -Verbose
 ```
+
+**Feedback storage (safe + local):**
+
+- `~/.codex/.router_feedback.json`
 
 ---
 

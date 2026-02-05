@@ -44,7 +44,8 @@ def resolve_skills_root():
 
 
 SKILLS_ROOT = resolve_skills_root()
-FEEDBACK_FILE = SKILLS_ROOT / ".router_feedback.json"
+# Store feedback in a user-writable location to avoid permission issues
+FEEDBACK_FILE = Path.home() / ".codex" / ".router_feedback.json"
 BUNDLES_FILE = REPO_ROOT / "bundles.json"
 DEFAULT_BUNDLES = {
     "frontend": ["frontend-design", "ui-ux-pro-max", "react-best-practices"],

@@ -75,7 +75,15 @@ function Ensure-SkillsRepo {
         Write-Error "Skills folder not found in repo: $skillsSourceDir"
         exit 1
     }
-    $skillCount = (Get-Content $skillsIndex | ConvertFrom-Json).Count
+    # Handle both list and object-with-skills formats
+    $skillIndexData = Get-Content $skillsIndex -Raw | ConvertFrom-Json
+    if ($skillIndexData -is [System.Collections.IEnumerable] -and -not ($skillIndexData.PSObject.Properties.Name -contains "skills")) {
+        $skillCount = $skillIndexData.Count
+    } elseif ($skillIndexData.PSObject.Properties.Name -contains "skills") {
+        $skillCount = $skillIndexData.skills.Count
+    } else {
+        $skillCount = 0
+    }
 
     # Copy skills to Codex folder (only skills/ and skills_index.json - skip docs, assets, etc.)
     if (-not (Test-Path $skillsRoot)) {

@@ -14,11 +14,29 @@ if (-not (Test-Path $scriptPath)) {
     exit 1
 }
 
-# Check for Python availability
-$python = Get-Command python -ErrorAction SilentlyContinue
-if (-not $python) {
+# Check for Python availability (prefer Windows launcher, then python3, then python)
+$pythonExe = $null
+$pythonArgs = @()
+
+$pyLauncher = Get-Command py -ErrorAction SilentlyContinue
+if ($pyLauncher) {
+    $pythonExe = "py"
+    $pythonArgs = @("-3")
+} else {
+    $python3 = Get-Command python3 -ErrorAction SilentlyContinue
+    if ($python3) {
+        $pythonExe = "python3"
+    } else {
+        $python = Get-Command python -ErrorAction SilentlyContinue
+        if ($python) {
+            $pythonExe = "python"
+        }
+    }
+}
+
+if (-not $pythonExe) {
     Write-Error "Python is required but not found in PATH. Please install Python 3.6+ from https://python.org"
     exit 1
 }
 
-python "$scriptPath" @Task
+& $pythonExe @pythonArgs "$scriptPath" @Task
