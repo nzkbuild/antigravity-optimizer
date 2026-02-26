@@ -21,6 +21,100 @@ $routerSkillDest = Join-Path $skillsRoot "activate-skills"
 $templatePath = Join-Path $repoRoot "workflows\activate-skills.md"
 $globalRulesPath = Join-Path $env:USERPROFILE ".gemini\GEMINI.md"
 
+function Get-SkillCountFromIndex {
+    param(
+        [Parameter(Mandatory)]
+        [string]$IndexPath
+    )
+
+    if (-not (Test-Path $IndexPath)) {
+        return 0
+    }
+
+    try {
+        $data = Get-Content $IndexPath -Raw | ConvertFrom-Json
+        if ($data -is [System.Collections.IEnumerable] -and -not ($data.PSObject.Properties.Name -contains "skills")) {
+            return $data.Count
+        }
+        if ($data.PSObject.Properties.Name -contains "skills" -and $data.skills) {
+            return $data.skills.Count
+        }
+    }
+    catch {
+        return 0
+    }
+
+    return 0
+}
+
+function Install-SkillsToTarget {
+    param(
+        [Parameter(Mandatory)]
+        [string]$SourceSkillsDir,
+        [Parameter(Mandatory)]
+        [string]$SourceIndexPath,
+        [Parameter(Mandatory)]
+        [string]$TargetRoot,
+        [Parameter(Mandatory)]
+        [string]$TargetLabel,
+        [string]$IndexDestinationPath
+    )
+
+    $result = [ordered]@{
+        Label         = $TargetLabel
+        Target        = $TargetRoot
+        Attempted     = 0
+        Installed     = 0
+        Failed        = 0
+        ErrorMessages = New-Object System.Collections.Generic.List[string]
+    }
+
+    try {
+        New-Item -ItemType Directory -Path $TargetRoot -Force -ErrorAction Stop | Out-Null
+    }
+    catch {
+        $result.ErrorMessages.Add("Cannot create target directory '$TargetRoot': $_")
+        return [pscustomobject]$result
+    }
+
+    $skillDirs = Get-ChildItem -Path $SourceSkillsDir -Directory -ErrorAction SilentlyContinue
+    foreach ($skillDir in $skillDirs) {
+        $result.Attempted++
+        $targetDir = Join-Path $TargetRoot $skillDir.Name
+
+        try {
+            if (Test-Path $targetDir) {
+                # Best effort: clear read-only attributes before replacing directories.
+                Get-ChildItem -Path $targetDir -Recurse -Force -ErrorAction SilentlyContinue | ForEach-Object {
+                    $_.Attributes = 'Normal'
+                }
+                Remove-Item -Recurse -Force -Path $targetDir -ErrorAction Stop
+            }
+
+            Copy-Item -Path $skillDir.FullName -Destination $targetDir -Recurse -ErrorAction Stop
+            $result.Installed++
+        }
+        catch {
+            $result.Failed++
+            if ($result.ErrorMessages.Count -lt 10) {
+                $result.ErrorMessages.Add("[$($skillDir.Name)] $($_.Exception.Message)")
+            }
+        }
+    }
+
+    try {
+        $indexPath = if ($IndexDestinationPath) { $IndexDestinationPath } else { Join-Path $TargetRoot "skills_index.json" }
+        Copy-Item -Path $SourceIndexPath -Destination $indexPath -Force -ErrorAction Stop
+    }
+    catch {
+        if ($result.ErrorMessages.Count -lt 10) {
+            $result.ErrorMessages.Add("[skills_index.json] $($_.Exception.Message)")
+        }
+    }
+
+    return [pscustomobject]$result
+}
+
 function Ensure-SkillsRepo {
     if ($SkipSkills) {
         return
@@ -38,7 +132,7 @@ function Ensure-SkillsRepo {
             Write-Host "Updating skills cache..."
             Push-Location $skillsCache
             try {
-                $pullResult = git pull --ff-only 2>&1
+                $pullResult = git -c "safe.directory=$skillsCache" pull --ff-only 2>&1
                 if ($LASTEXITCODE -eq 0) {
                     if ($pullResult -match "Already up to date") {
                         Write-Host "Skills cache is up to date."
@@ -46,7 +140,8 @@ function Ensure-SkillsRepo {
                         Write-Host "Skills cache updated!"
                     }
                 } else {
-                    Write-Warning "Could not update cache. Using existing version."
+                    Write-Warning "Could not update cache. Using existing version. Details: $pullResult"
+                    $global:LASTEXITCODE = 0
                 }
             } finally {
                 Pop-Location
@@ -75,51 +170,57 @@ function Ensure-SkillsRepo {
         Write-Error "Skills folder not found in repo: $skillsSourceDir"
         exit 1
     }
-    # Handle both list and object-with-skills formats
-    $skillIndexData = Get-Content $skillsIndex -Raw | ConvertFrom-Json
-    if ($skillIndexData -is [System.Collections.IEnumerable] -and -not ($skillIndexData.PSObject.Properties.Name -contains "skills")) {
-        $skillCount = $skillIndexData.Count
-    } elseif ($skillIndexData.PSObject.Properties.Name -contains "skills") {
-        $skillCount = $skillIndexData.skills.Count
+    $skillCount = Get-SkillCountFromIndex -IndexPath $skillsIndex
+
+    # Install to Codex folder (only skills/ and skills_index.json)
+    $codexInstall = Install-SkillsToTarget `
+        -SourceSkillsDir $skillsSourceDir `
+        -SourceIndexPath $skillsIndex `
+        -TargetRoot $skillsRoot `
+        -TargetLabel "Codex" `
+        -IndexDestinationPath (Join-Path $skillsRoot "skills_index.json")
+
+    if ($codexInstall.Installed -gt 0 -and $codexInstall.Failed -eq 0) {
+        Write-Host "Skills installed to: $skillsRoot ($($codexInstall.Installed) skills)"
+    } elseif ($codexInstall.Installed -gt 0) {
+        Write-Warning "Partial install to $skillsRoot ($($codexInstall.Installed) installed, $($codexInstall.Failed) failed)."
     } else {
-        $skillCount = 0
+        Write-Warning "Could not install skills to $skillsRoot."
     }
 
-    # Copy skills to Codex folder (only skills/ and skills_index.json - skip docs, assets, etc.)
-    if (-not (Test-Path $skillsRoot)) {
-        New-Item -ItemType Directory -Path $skillsRoot | Out-Null
-    }
-
-    $skillDirs = Get-ChildItem -Path $skillsSourceDir -Directory
-    foreach ($skillDir in $skillDirs) {
-        $targetDir = Join-Path $skillsRoot $skillDir.Name
-        if (Test-Path $targetDir) {
-            Remove-Item -Recurse -Force $targetDir
-        }
-        Copy-Item -Path $skillDir.FullName -Destination $targetDir -Recurse
-    }
-
-    Copy-Item -Path $skillsIndex -Destination (Join-Path $skillsRoot "skills_index.json") -Force
-    Write-Host "Skills installed to: $skillsRoot ($skillCount skills)"
-
-    # Also copy to .agent/skills in this repo (for Antigravity IDE)
+    # Also install to .agent/skills in this repo (for Antigravity IDE)
     $agentSkillsDir = Join-Path $repoRoot ".agent\skills"
-    if (-not (Test-Path $agentSkillsDir)) {
-        New-Item -ItemType Directory -Path $agentSkillsDir -Force | Out-Null
-    }
-    
-    # Copy skills folder (only skills/ and index - no docs, assets, bin, etc.)
     $agentSkillsSubDir = Join-Path $agentSkillsDir "skills"
-    if (Test-Path $agentSkillsSubDir) {
-        Remove-Item -Recurse -Force $agentSkillsSubDir
+    $agentInstall = Install-SkillsToTarget `
+        -SourceSkillsDir $skillsSourceDir `
+        -SourceIndexPath $skillsIndex `
+        -TargetRoot $agentSkillsSubDir `
+        -TargetLabel "Antigravity IDE" `
+        -IndexDestinationPath (Join-Path $agentSkillsDir "skills_index.json")
+
+    if ($agentInstall.Installed -gt 0 -and $agentInstall.Failed -eq 0) {
+        Write-Host "Skills also installed to: $agentSkillsDir"
+    } elseif ($agentInstall.Installed -gt 0) {
+        Write-Warning "Partial install to $agentSkillsDir ($($agentInstall.Installed) installed, $($agentInstall.Failed) failed)."
+    } else {
+        Write-Warning "Could not install skills to $agentSkillsDir."
     }
-    Copy-Item -Path $skillsSourceDir -Destination $agentSkillsSubDir -Recurse
-    Copy-Item -Path $skillsIndex -Destination (Join-Path $agentSkillsDir "skills_index.json") -Force
-    Write-Host "Skills also installed to: $agentSkillsDir"
+
+    foreach ($message in $codexInstall.ErrorMessages) {
+        Write-Verbose "[Codex] $message"
+    }
+    foreach ($message in $agentInstall.ErrorMessages) {
+        Write-Verbose "[Agent] $message"
+    }
+
+    if ($codexInstall.Installed -eq 0 -and $agentInstall.Installed -eq 0) {
+        Write-Error "Skills installation failed for all targets. Check filesystem permissions."
+        exit 1
+    }
 
     # Auto-add .agent/skills/ to .gitignore (prevent 2000+ file tracking)
     $gitignorePath = Join-Path $repoRoot ".gitignore"
-    if (Test-Path $gitignorePath) {
+    if ((Test-Path $gitignorePath) -and $agentInstall.Installed -gt 0) {
         $gitignoreContent = Get-Content $gitignorePath -Raw
         if ($gitignoreContent -notmatch "\.agent/skills/") {
             Add-Content -Path $gitignorePath -Value "`n# Skills (installed separately)`n.agent/skills/"
@@ -147,13 +248,34 @@ function Install-Workflow {
         $workflowDir = Join-Path $env:USERPROFILE ".gemini\antigravity\global_workflows"
     }
     $workflowTarget = Join-Path $workflowDir "activate-skills.md"
+    
+    try {
+        New-Item -ItemType Directory -Path $workflowDir -Force -ErrorAction Stop | Out-Null
+        # Copy template as-is (no path replacement needed - template is now dynamic)
+        Copy-Item -Path $templatePath -Destination $workflowTarget -Force -ErrorAction Stop
+        Write-Host "Installed workflow: $workflowTarget"
+        return
+    }
+    catch {
+        if ($WorkflowScope -eq "global") {
+            Write-Warning "Global workflow install failed: $($_.Exception.Message)"
+            $fallbackDir = Join-Path $repoRoot ".gemini\workflows"
+            $fallbackTarget = Join-Path $fallbackDir "activate-skills.md"
+            try {
+                New-Item -ItemType Directory -Path $fallbackDir -Force -ErrorAction Stop | Out-Null
+                Copy-Item -Path $templatePath -Destination $fallbackTarget -Force -ErrorAction Stop
+                Write-Host "Installed workflow (workspace fallback): $fallbackTarget"
+                return
+            }
+            catch {
+                Write-Warning "Workflow install skipped: $($_.Exception.Message)"
+                return
+            }
+        }
 
-    New-Item -ItemType Directory -Path $workflowDir -Force | Out-Null
-
-    # Copy template as-is (no path replacement needed - template is now dynamic)
-    Copy-Item -Path $templatePath -Destination $workflowTarget -Force
-
-    Write-Host "Installed workflow: $workflowTarget"
+        Write-Warning "Workflow install skipped: $($_.Exception.Message)"
+        return
+    }
 }
 
 function Install-GlobalRules {
@@ -372,18 +494,22 @@ function Install-RouterSkill {
         return
     }
 
-    if (-not (Test-Path $skillsRoot)) {
-        New-Item -ItemType Directory -Path $skillsRoot | Out-Null
+    try {
+        if (-not (Test-Path $skillsRoot)) {
+            New-Item -ItemType Directory -Path $skillsRoot -Force -ErrorAction Stop | Out-Null
+        }
+
+        if (Test-Path $routerSkillDest) {
+            Remove-Item -Recurse -Force $routerSkillDest -ErrorAction Stop
+        }
+
+        Copy-Item -Path $routerSkillSource -Destination $routerSkillDest -Recurse -ErrorAction Stop
+        Write-Host "Installed Codex skill: activate-skills"
+        [Environment]::SetEnvironmentVariable("ANTIGRAVITY_OPTIMIZER_ROOT", $repoRoot.Path, "User")
     }
-
-    if (Test-Path $routerSkillDest) {
-        Remove-Item -Recurse -Force $routerSkillDest
+    catch {
+        Write-Warning "Skipped Codex router skill install: $($_.Exception.Message)"
     }
-
-    Copy-Item -Path $routerSkillSource -Destination $routerSkillDest -Recurse
-    Write-Host "Installed Codex skill: activate-skills"
-
-    [Environment]::SetEnvironmentVariable("ANTIGRAVITY_OPTIMIZER_ROOT", $repoRoot.Path, "User")
 }
 
 function Repair-SkillYaml {
@@ -407,6 +533,7 @@ function Repair-SkillYaml {
     
     $repaired = 0
     $failed = 0
+    $verboseFailures = 0
     $skillDirs = @($skillsRoot, (Join-Path $repoRoot ".agent\skills"))
     
     foreach ($baseDir in $skillDirs) {
@@ -448,6 +575,62 @@ function Repair-SkillYaml {
                     $content = $content -replace '(^---\s*[\r\n]+name:\s*[^\r\n]+)([\r\n]+)', "`$1`r`ndescription: `"$skillName skill`"`$2"
                     $needsRepair = $true
                 }
+
+                # Issue 4: Risky/broken frontmatter quoting
+                # - Converts double-quoted scalars to single-quoted to avoid invalid escapes (e.g. \')
+                # - Repairs malformed single-quoted command hooks with inner single quotes
+                $fmMatch = [regex]::Match($content, '(?s)^(---\s*\r?\n)(.*?)(\r?\n---\s*\r?\n)')
+                if ($fmMatch.Success) {
+                    $fm = $fmMatch.Groups[2].Value
+                    $fmLines = $fm -split "`n"
+                    $fmChanged = $false
+
+                    for ($i = 0; $i -lt $fmLines.Count; $i++) {
+                        $line = $fmLines[$i].TrimEnd("`r")
+
+                        if ($line -match '^(\s*[A-Za-z0-9_-]+:\s*)"((?:[^"\\]|\\.)*)"\s*$') {
+                            $prefix = $matches[1]
+                            $value = $matches[2]
+                            $value = $value -replace "\\'", "'"
+                            $value = $value -replace '\\"', '"'
+                            $value = $value -replace "'", "''"
+                            $fmLines[$i] = "$prefix'$value'"
+                            $fmChanged = $true
+                            continue
+                        }
+
+                        if ($line -match '^(\s*[A-Za-z0-9_-]+:\s*)"(.+)$') {
+                            $prefix = $matches[1]
+                            $value = $matches[2].TrimEnd('"')
+                            $value = $value -replace "\\'", "'"
+                            $value = $value -replace '\\"', '"'
+                            $value = $value -replace "'", "''"
+                            $fmLines[$i] = "$prefix'$value'"
+                            $fmChanged = $true
+                            continue
+                        }
+
+                        if ($line -match "^(\s*command:\s*)'(.*)'\s*$") {
+                            $prefix = $matches[1]
+                            $value = $matches[2]
+                            if ($value -match "(?<!')'(?!')") {
+                                $value = $value -replace "''", "'"
+                                $value = $value -replace '\\', '\\\\'
+                                $value = $value -replace '"', '\"'
+                                $fmLines[$i] = "$prefix`"$value`""
+                                $fmChanged = $true
+                            }
+                        }
+                    }
+
+                    if ($fmChanged) {
+                        $newFm = $fmLines -join "`n"
+                        $restStart = $fmMatch.Index + $fmMatch.Length
+                        $rest = if ($restStart -lt $content.Length) { $content.Substring($restStart) } else { "" }
+                        $content = $fmMatch.Groups[1].Value + $newFm + $fmMatch.Groups[3].Value + $rest
+                        $needsRepair = $true
+                    }
+                }
                 
                 if ($needsRepair -and $content -ne $originalContent) {
                     Set-Content -Path $file.FullName -Value $content -NoNewline
@@ -456,7 +639,10 @@ function Repair-SkillYaml {
             }
             catch {
                 $failed++
-                Write-Verbose "Failed to process $($file.FullName): $_"
+                if ($verboseFailures -lt 10) {
+                    Write-Verbose "Failed to process $($file.FullName): $_"
+                }
+                $verboseFailures++
             }
         }
     }
@@ -469,6 +655,9 @@ function Repair-SkillYaml {
     
     if ($failed -gt 0) {
         Write-Host "[!] Failed to process $failed files" -ForegroundColor Yellow
+        if ($verboseFailures -gt 10) {
+            Write-Verbose "Suppressed $($verboseFailures - 10) additional verbose file errors."
+        }
     }
 }
 
@@ -487,20 +676,12 @@ function Show-VerificationReport {
     
     # Get installed count
     if (Test-Path $agentSkillsIndex) {
-        try {
-            $installedCount = (Get-Content $agentSkillsIndex | ConvertFrom-Json).Count
-        } catch {
-            $installedCount = 0
-        }
+        $installedCount = Get-SkillCountFromIndex -IndexPath $agentSkillsIndex
     }
     
     # Get source count from cache
     if (Test-Path $skillsIndex) {
-        try {
-            $sourceCount = (Get-Content $skillsIndex | ConvertFrom-Json).Count
-        } catch {
-            $sourceCount = 0
-        }
+        $sourceCount = Get-SkillCountFromIndex -IndexPath $skillsIndex
     }
     
     # Display results
@@ -541,6 +722,9 @@ Install-GlobalRules
 Install-RouterSkill
 Repair-SkillYaml
 Show-VerificationReport
+
+# Ensure callers do not receive a stale non-zero code from handled external commands.
+$global:LASTEXITCODE = 0
 
 if ($AddPath) {
     $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")

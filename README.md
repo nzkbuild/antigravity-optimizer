@@ -28,6 +28,7 @@ Choose your mode:
 - **[1] Essentials** - Installs everything, removes extra docs (recommended)
 - **[2] Full Repository** - Keeps all documentation  
 - **[3] Update Only** - Quick update (2 seconds)
+- **[4] Fix/Repair Skills** - Local YAML/frontmatter repair (no network)
 
 ### 2. Usage
 
@@ -108,6 +109,9 @@ Edit `bundles.json` to customize.
 # Update skills only
 .\setup.ps1 -Mode update
 
+# Repair local skills only (no network)
+.\setup.ps1 -Mode fix -Silent
+
 # Get help
 Get-Help .\setup.ps1 -Full
 
@@ -136,6 +140,22 @@ python tools/skill_router.py --list-bundles
 # Verify installation
 python tools/skill_router.py --verify
 ```
+
+---
+
+## Troubleshooting
+
+### PowerShell execution policy blocks script
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1 -Mode update
+```
+
+### Access denied on `~/.codex/skills`
+
+- Close terminals/processes that may lock skill files.
+- Re-run with elevated permissions if your environment requires it.
+- The installer now continues when possible and still keeps `.agent/skills` updated for local project usage.
 
 ---
 

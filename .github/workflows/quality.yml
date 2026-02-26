@@ -1,0 +1,33 @@
+name: Quality Checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile Python router
+        shell: pwsh
+        run: python -m py_compile tools/skill_router.py
+
+      - name: Verify setup fix mode
+        shell: pwsh
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1 -Mode fix -Silent
+
+      - name: Verify router index integrity
+        shell: pwsh
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\activate-skills.ps1 "quality check" --verify

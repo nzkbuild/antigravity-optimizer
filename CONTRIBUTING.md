@@ -28,7 +28,10 @@ Be respectful, inclusive, and constructive. We welcome contributors of all backg
 To test changes locally:
 ```powershell
 python tools\skill_router.py "test task" --verify
+powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1 -Mode fix -Silent
 ```
+
+CI runs these checks automatically in `.github/workflows/quality.yml`.
 
 ## Reporting Issues
 

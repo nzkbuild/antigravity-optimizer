@@ -18,6 +18,7 @@ Thumbs.db
 # Env
 .env
 .env.local
+.gemini/
 
 # Skills update tracking
 .skills-update.json

@@ -251,6 +251,7 @@ function Invoke-SkillsFix {
     $agentSkillsDir = Join-Path $PSScriptRoot ".agent\skills"
     $codexSkillsDir = Join-Path $env:USERPROFILE ".codex\skills"
     $skillsIndex = Join-Path $agentSkillsDir "skills_index.json"
+    $skillCount = 0
     
     $dirsToRepair = @()
     
@@ -275,7 +276,11 @@ function Invoke-SkillsFix {
     if (Test-Path $skillsIndex) {
         try {
             $skills = Get-Content $skillsIndex -Raw | ConvertFrom-Json
-            $skillCount = $skills.Count
+            if ($skills -is [System.Collections.IEnumerable] -and -not ($skills.PSObject.Properties.Name -contains "skills")) {
+                $skillCount = $skills.Count
+            } elseif ($skills.PSObject.Properties.Name -contains "skills" -and $skills.skills) {
+                $skillCount = $skills.skills.Count
+            }
             Write-Step "Found $skillCount skills in index" -Type Success
         }
         catch {
@@ -353,6 +358,71 @@ function Invoke-SkillsFix {
                             $fmChanged = $true
                         }
                     }
+                    if ($fmChanged) {
+                        $newFm = $fmLines -join "`n"
+                        $restStart = $fmMatch.Index + $fmMatch.Length
+                        $rest = if ($restStart -lt $content.Length) { $content.Substring($restStart) } else { "" }
+                        $content = $fmMatch.Groups[1].Value + $newFm + $fmMatch.Groups[3].Value + $rest
+                        $needsRepair = $true
+                    }
+                }
+
+                # SAFE FIX 5: Normalize risky quoted frontmatter values
+                # - Converts double-quoted scalars to single-quoted to avoid invalid YAML escapes (e.g. \')
+                # - Fixes malformed single-quoted command hooks that contain unescaped single quotes
+                $fmMatch = [regex]::Match($content, '(?s)^(---\s*\r?\n)(.*?)(\r?\n---\s*\r?\n)')
+                if ($fmMatch.Success) {
+                    $fm = $fmMatch.Groups[2].Value
+                    $fmLines = $fm -split "`n"
+                    $fmChanged = $false
+
+                    for ($i = 0; $i -lt $fmLines.Count; $i++) {
+                        $line = $fmLines[$i].TrimEnd("`r")
+
+                        if ($line -match '^(\s*[A-Za-z0-9_-]+:\s*)"((?:[^"\\]|\\.)*)"\s*$') {
+                            $prefix = $matches[1]
+                            $value = $matches[2]
+
+                            # YAML double-quoted strings do not support \'
+                            $value = $value -replace "\\'", "'"
+                            # Keep human-readable intent for escaped double quotes
+                            $value = $value -replace '\\"', '"'
+                            # Convert to YAML-safe single-quoted scalar
+                            $value = $value -replace "'", "''"
+
+                            $fmLines[$i] = "$prefix'$value'"
+                            $fmChanged = $true
+                            continue
+                        }
+
+                        # Handle still-broken lines that start a double-quoted scalar but fail to close cleanly
+                        if ($line -match '^(\s*[A-Za-z0-9_-]+:\s*)"(.+)$') {
+                            $prefix = $matches[1]
+                            $value = $matches[2].TrimEnd('"')
+                            $value = $value -replace "\\'", "'"
+                            $value = $value -replace '\\"', '"'
+                            $value = $value -replace "'", "''"
+
+                            $fmLines[$i] = "$prefix'$value'"
+                            $fmChanged = $true
+                            continue
+                        }
+
+                        if ($line -match "^(\s*command:\s*)'(.*)'\s*$") {
+                            $prefix = $matches[1]
+                            $value = $matches[2]
+
+                            # If inner single quotes are not escaped as '', rewrite using YAML double quotes
+                            if ($value -match "(?<!')'(?!')") {
+                                $value = $value -replace "''", "'"
+                                $value = $value -replace '\\', '\\\\'
+                                $value = $value -replace '"', '\"'
+                                $fmLines[$i] = "$prefix`"$value`""
+                                $fmChanged = $true
+                            }
+                        }
+                    }
+
                     if ($fmChanged) {
                         $newFm = $fmLines -join "`n"
                         $restStart = $fmMatch.Index + $fmMatch.Length
