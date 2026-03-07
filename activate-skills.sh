@@ -24,7 +24,7 @@ elif command -v python &> /dev/null; then
     PYTHON_CMD="python"
 else
     echo "Error: Python is required but not found in PATH." >&2
-    echo "Please install Python 3.6+ from https://python.org" >&2
+    echo "Please install Python 3.8+ from https://python.org/downloads/" >&2
     exit 1
 fi
 

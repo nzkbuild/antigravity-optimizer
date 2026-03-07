@@ -283,7 +283,7 @@ function Install-GlobalRules {
         return
     }
 
-    $version = "1.3.2"
+    $version = "2.0.0"
     $rulesBlock = @"
 <!-- ANTIGRAVITY_OPTIMIZER_VERSION: $version -->
 ## Activate Skills Router (Preferred)

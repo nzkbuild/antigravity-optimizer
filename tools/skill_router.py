@@ -9,16 +9,31 @@ import sys
 from pathlib import Path
 
 # Python version check
-if sys.version_info < (3, 6):
-    print("Error: Python 3.6+ is required. You have Python {}.{}.{}".format(*sys.version_info[:3]), file=sys.stderr)
-    print("Please upgrade Python from https://python.org", file=sys.stderr)
+if sys.version_info < (3, 8):
+    print("Error: Python 3.8+ is required. You have Python {}.{}.{}".format(*sys.version_info[:3]), file=sys.stderr)
+    print("Please upgrade Python from https://python.org/downloads/", file=sys.stderr)
     sys.exit(1)
+
+try:
+    from project_profiles import get_profile_boost_set
+except ImportError:
+    def get_profile_boost_set(project_dir=None):
+        return set()
+
+try:
+    from routing_memory import (
+        write_session_entry, write_diary_entry, recall,
+        get_master_memory_boosts, archive_old_diaries,
+    )
+    HAS_MEMORY = True
+except ImportError:
+    HAS_MEMORY = False
 
 
 DEFAULT_MAX_SKILLS = 3
-MAX_SKILLS_CAP = 8  # Match GEMINI.md tier system (complex tasks: 6-8 skills)
-HARD_MAX_SKILLS = 5  # Enforced cap for router output
+MAX_SKILLS = 5  # Enforced cap for router output
 MAX_TASK_LENGTH = 2000  # Prevent extremely long task text
+FEEDBACK_CAP = 10  # Maximum absolute feedback score per skill
 MIN_SCORE = 2
 RELATIVE_THRESHOLD = 0.7
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -58,6 +73,11 @@ DEFAULT_BUNDLES = {
 }
 
 
+def get_skill_id(skill):
+    """Extract the canonical ID from a skill dict."""
+    return skill.get("id") or skill.get("name") or ""
+
+
 def load_bundles():
     """Load bundles from JSON file or return defaults."""
     if BUNDLES_FILE.exists():
@@ -66,8 +86,8 @@ def load_bundles():
                 data = json.load(f)
             if isinstance(data, dict):
                 return data
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Warning: Failed to load bundles.json: {e}", file=sys.stderr)
     return DEFAULT_BUNDLES
 
 
@@ -116,13 +136,47 @@ def expand_tokens(tokens):
     return expanded
 
 
+# Category-aware fallback mapping (2.4)
+CATEGORY_FALLBACKS = {
+    "security": "security-review",
+    "frontend": "frontend-design",
+    "backend": "api-patterns",
+    "database": "database-design",
+    "devops": "docker-expert",
+    "testing": "test-driven-development",
+    "default": "brainstorming",
+}
+
+CATEGORY_KEYWORDS = {
+    "security": SECURITY_KEYWORDS,
+    "frontend": UI_KEYWORDS,
+    "backend": {"api", "server", "endpoint", "rest", "graphql", "backend", "microservice"},
+    "database": {"database", "db", "sql", "postgres", "mongo", "redis", "schema", "migration"},
+    "devops": {"docker", "kubernetes", "k8s", "deploy", "ci", "cd", "pipeline", "terraform", "aws"},
+    "testing": {"test", "tdd", "qa", "playwright", "jest", "pytest", "coverage"},
+}
+
+
 def should_filter_security(task_tokens, skill_name):
+    """Filter security skills from non-security tasks."""
     task_has_security = any(t in SECURITY_KEYWORDS for t in task_tokens)
-    task_is_ui = any(t in UI_KEYWORDS for t in task_tokens)
-    if task_has_security or not task_is_ui:
-        return False
+    if task_has_security:
+        return False  # Security task — keep security skills
     name = (skill_name or "").lower()
-    return any(k in name for k in SECURITY_KEYWORDS)
+    is_security_skill = any(k in name for k in SECURITY_KEYWORDS)
+    return is_security_skill  # Filter security skills from non-security tasks
+
+
+def detect_task_category(task_tokens):
+    """Detect dominant task category for smart fallback."""
+    best_cat = "default"
+    best_count = 0
+    for category, keywords in CATEGORY_KEYWORDS.items():
+        overlap = sum(1 for t in task_tokens if t in keywords)
+        if overlap > best_count:
+            best_count = overlap
+            best_cat = category
+    return best_cat if best_count > 0 else "default"
 
 
 def load_index(index_path):
@@ -130,16 +184,55 @@ def load_index(index_path):
         with index_path.open("r", encoding="utf-8") as handle:
             data = json.load(handle)
         if isinstance(data, dict) and "skills" in data:
-            return data["skills"]
-        if isinstance(data, list):
-            return data
-        return []
+            skills = data["skills"]
+        elif isinstance(data, list):
+            skills = data
+        else:
+            skills = []
     except json.JSONDecodeError as e:
         print(f"Error: Invalid JSON in skills_index.json: {e}", file=sys.stderr)
         return []
     except Exception as e:
         print(f"Error: Failed to load skills index: {e}", file=sys.stderr)
         return []
+
+    # Merge custom skills from .agent/skills/custom/ (4.1)
+    custom_dir = Path.cwd() / ".agent" / "skills" / "custom"
+    if custom_dir.exists():
+        for skill_dir in custom_dir.iterdir():
+            if skill_dir.is_dir():
+                skill_md = skill_dir / "SKILL.md"
+                if skill_md.exists():
+                    skill_id = skill_dir.name
+                    # Don't duplicate if already in index
+                    if not any(get_skill_id(s) == skill_id for s in skills):
+                        # Parse frontmatter for description
+                        desc = _parse_skill_description(skill_md)
+                        skills.append({
+                            "id": skill_id,
+                            "name": skill_id,
+                            "description": desc,
+                            "path": str(skill_dir),
+                            "category": "Custom",
+                            "source": "local",
+                        })
+    return skills
+
+
+def _parse_skill_description(skill_md_path):
+    """Extract description from SKILL.md frontmatter."""
+    try:
+        content = skill_md_path.read_text(encoding="utf-8")
+        if content.startswith("---"):
+            end = content.find("---", 3)
+            if end > 0:
+                frontmatter = content[3:end]
+                for line in frontmatter.splitlines():
+                    if line.strip().startswith("description:"):
+                        return line.split(":", 1)[1].strip().strip('"').strip("'")
+    except Exception:
+        pass
+    return "Custom skill (no description)"
 
 
 def load_feedback():
@@ -150,8 +243,8 @@ def load_feedback():
             data = json.load(handle)
         if isinstance(data, dict):
             return data
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"Warning: Failed to load feedback file: {e}", file=sys.stderr)
     return {}
 
 
@@ -162,24 +255,38 @@ def save_feedback(feedback):
 
 
 def score_skill(skill, task_tokens, feedback, bundle_set):
-    name = skill.get("id") or skill.get("name") or ""
+    name = get_skill_id(skill)
     description = skill.get("description") or ""
     path = skill.get("path") or ""
+    tags = skill.get("tags") or []
     name_tokens = set(tokenize(name))
     desc_tokens = set(tokenize(description))
     path_tokens = set(tokenize(path))
+    tag_tokens = set(t.lower() for t in tags)
+    task_set = set(task_tokens)
 
-    score = 0
+    # Weighted overlap scoring
+    name_overlap = len(task_set & (name_tokens | path_tokens))
+    desc_overlap = len(task_set & desc_tokens)
+    tag_overlap = len(task_set & tag_tokens)
+
+    raw = (name_overlap * 3) + (desc_overlap * 1) + (tag_overlap * 2)
+
+    # Normalize by skill token count to prevent length bias
+    total_skill_tokens = len(name_tokens | desc_tokens | tag_tokens) or 1
+    score = (raw / total_skill_tokens) * 10
+
     reasons = []
     for token in task_tokens:
         if token in name_tokens or token in path_tokens:
-            score += 3
             if f"token:{token}" not in reasons:
                 reasons.append(f"token:{token}")
         if token in desc_tokens:
-            score += 1
             if f"desc:{token}" not in reasons:
                 reasons.append(f"desc:{token}")
+        if token in tag_tokens:
+            if f"tag:{token}" not in reasons:
+                reasons.append(f"tag:{token}")
 
     if name in bundle_set:
         score += 5
@@ -187,7 +294,7 @@ def score_skill(skill, task_tokens, feedback, bundle_set):
 
     boost = feedback.get(name)
     if isinstance(boost, (int, float)):
-        score += boost
+        score += min(max(boost, -FEEDBACK_CAP), FEEDBACK_CAP)
         reasons.append(f"feedback:+{boost}")
     return score, name, reasons
 
@@ -205,7 +312,7 @@ def pick_skills(skills, task, max_skills, feedback, bundle_set, explain=False):
     skipped_heavy = []
     skipped_filtered = []
     for skill in skills:
-        name = skill.get("id") or skill.get("name") or ""
+        name = get_skill_id(skill)
         if (name in HEAVY_SKILLS) and (not allow_heavy):
             skipped_heavy.append(name)
             continue
@@ -231,7 +338,13 @@ def pick_skills(skills, task, max_skills, feedback, bundle_set, explain=False):
                 explanations.append((name, score, reasons))
 
     if not picked:
-        fallback = next((s.get("id") for s in skills if s.get("id") == "brainstorming"), None)
+        # Smart category-aware fallback (2.4)
+        category = detect_task_category(task_tokens)
+        fallback_name = CATEGORY_FALLBACKS.get(category, "brainstorming")
+        fallback = next((get_skill_id(s) for s in skills if get_skill_id(s) == fallback_name), None)
+        if not fallback:
+            # Try brainstorming as final fallback
+            fallback = next((get_skill_id(s) for s in skills if get_skill_id(s) == "brainstorming"), None)
         if fallback:
             picked = [fallback]
         else:
@@ -347,6 +460,22 @@ def parse_args():
         help="Disable auto-copy to clipboard",
     )
     parser.add_argument(
+        "--no-profile",
+        action="store_true",
+        help="Disable project profile detection and boosting",
+    )
+    parser.add_argument(
+        "--no-memory",
+        action="store_true",
+        help="Disable session memory and diary writing",
+    )
+    parser.add_argument(
+        "--recall",
+        type=str,
+        metavar="QUERY",
+        help="Search past routing sessions by keyword",
+    )
+    parser.add_argument(
         "--list-bundles",
         action="store_true",
         help="List all available skill bundles",
@@ -373,7 +502,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    max_skills = max(1, min(args.max, MAX_SKILLS_CAP, HARD_MAX_SKILLS))
+    max_skills = max(1, min(args.max, MAX_SKILLS))
     task = " ".join(args.task or []).strip()
 
     index_path = SKILLS_ROOT / "skills_index.json"
@@ -406,7 +535,7 @@ def main():
         keyword = args.search.lower()
         matches = []
         for skill in skills:
-            skill_id = skill.get("id") or skill.get("name") or ""
+            skill_id = get_skill_id(skill)
             desc = skill.get("description") or ""
             if keyword in skill_id.lower() or keyword in desc.lower():
                 matches.append(skill)
@@ -417,7 +546,7 @@ def main():
         if matches:
             print(f"Found {len(matches)} skills:\n")
             for skill in matches[:20]:  # Limit to 20 results
-                skill_id = skill.get("id") or skill.get("name") or "unknown"
+                skill_id = get_skill_id(skill) or "unknown"
                 desc = skill.get("description") or "No description"
                 # Truncate description
                 if len(desc) > 60:
@@ -436,7 +565,7 @@ def main():
         skill_id = args.info.lower()
         found = None
         for skill in skills:
-            sid = (skill.get("id") or skill.get("name") or "").lower()
+            sid = get_skill_id(skill).lower()
             if sid == skill_id:
                 found = skill
                 break
@@ -449,12 +578,28 @@ def main():
         print("=" * 50)
         print("SKILL INFORMATION")
         print("=" * 50)
-        print(f"  ID:          {found.get('id') or found.get('name')}")
+        sid = get_skill_id(found)
+        print(f"  ID:          {sid}")
         print(f"  Name:        {found.get('name', 'N/A')}")
         print(f"  Category:    {found.get('category', 'N/A')}")
-        print(f"  Risk:        {found.get('risk', 'N/A')}")
+        tags = found.get('tags')
+        if tags:
+            print(f"  Tags:        {', '.join(tags)}")
         print(f"  Source:      {found.get('source', 'N/A')}")
         print(f"  Path:        {found.get('path', 'N/A')}")
+        context = found.get('context')
+        if context:
+            print(f"  Context:     {context}")
+        allowed = found.get('allowed-tools')
+        if allowed:
+            print(f"  Tools:       {allowed}")
+        arg_hint = found.get('argument-hint')
+        if arg_hint:
+            print(f"  Invocation:  /{sid} {arg_hint}")
+        fb = load_feedback().get(sid)
+        if fb:
+            print(f"  Feedback:    {'+' if fb > 0 else ''}{fb}")
+        print(f"  Risk:        {found.get('risk', 'N/A')}")
         print()
         print("  Description:")
         desc = found.get('description', 'No description available.')
@@ -506,6 +651,20 @@ def main():
         print("=" * 50)
         return 0
 
+    # Handle --recall (3.3) — no task required
+    if args.recall:
+        if not HAS_MEMORY:
+            print("Error: Memory module not available.", file=sys.stderr)
+            return 1
+        results = recall(args.recall)
+        if results:
+            print(f"Found {len(results)} past sessions matching \"{args.recall}\":\n")
+            for r in results:
+                print(f"  {r['date']} {r['time']}: \"{r['task']}\" \u2192 {r['skills']}")
+        else:
+            print(f"No past sessions found matching \"{args.recall}\".")
+        return 0
+
     if not task:
         print("Error: task text is required.", file=sys.stderr)
         return 1
@@ -520,10 +679,27 @@ def main():
     feedback = load_feedback()
     bundles = load_bundles()
     bundle_set = set(bundles.get(args.bundle or "", []))
+
+    # Merge project profile boosts (2.5)
+    if not args.no_profile:
+        profile_boost = get_profile_boost_set()
+        bundle_set = bundle_set | profile_boost
+
+    # Apply master memory boosts/penalties (3.4)
+    master_boost_set = set()
+    master_avoid_set = set()
+    if HAS_MEMORY and not args.no_memory:
+        try:
+            master_boost_set, master_avoid_set = get_master_memory_boosts()
+            bundle_set = bundle_set | master_boost_set
+        except Exception:
+            pass
+
+
     
     # Validate bundle skills exist in index
     if args.bundle and bundle_set:
-        skill_ids = {s.get("id") or s.get("name") for s in skills}
+        skill_ids = {get_skill_id(s) for s in skills}
         missing_bundle_skills = bundle_set - skill_ids
         if missing_bundle_skills:
             print(f"Warning: Bundle '{args.bundle}' references skills not in index: {', '.join(sorted(missing_bundle_skills))}", file=sys.stderr)
@@ -533,8 +709,12 @@ def main():
     )
 
     if args.feedback:
+        skill_ids = {get_skill_id(s) for s in skills}
         for name in args.feedback:
-            feedback[name] = feedback.get(name, 0) + 2
+            if name not in skill_ids:
+                print(f"Warning: '{name}' not in skill index, skipping", file=sys.stderr)
+                continue
+            feedback[name] = min(feedback.get(name, 0) + 2, FEEDBACK_CAP)
         save_feedback(feedback)
 
     output_lines = []
@@ -560,6 +740,16 @@ def main():
     if not args.no_clipboard:
         if not copy_to_clipboard(output_text):
             print("Warning: clipboard copy failed.", file=sys.stderr)
+
+    # Write memory (3.1 + 3.2)
+    if HAS_MEMORY and not args.no_memory:
+        try:
+            scores = [(name, score) for name, score, _ in explanations] if explanations else None
+            write_session_entry(task, picked, args.bundle, scores)
+            write_diary_entry(task, picked, args.bundle, scores)
+        except Exception as e:
+            print(f"Warning: Failed to write memory: {e}", file=sys.stderr)
+
     return 0
 
 

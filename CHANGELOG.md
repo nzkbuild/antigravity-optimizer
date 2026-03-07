@@ -4,6 +4,46 @@ All notable changes to the Antigravity Optimizer will be documented in this file
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [2.0.0] - 2026-03-08
+
+### Added
+- **Test suite**: 60 pytest tests covering scoring, picking, bundles, feedback, security, profiles, memory
+- **Multi-platform CI**: Windows/Ubuntu/macOS × Python 3.8/3.12 matrix
+- **Ruff linting**: Configured in `pyproject.toml`
+- **Tags-based scoring**: Skills with `tags` field scored via `tag:` matching
+- **Normalized scoring**: Prevents length bias by normalizing by skill token count
+- **Category-aware fallback**: 6 domain mappings instead of always falling back to brainstorming
+- **LRU project profiles**: Auto-detects 12+ project types, `--no-profile` flag
+- **Session memory**: `.agent/session-memory.md` with 500-line rotation
+- **Routing diary**: Daily logs at `.agent/routing-diary/YYYY-MM-DD.md`
+- **Echo recall**: `--recall <query>` searches past routing sessions
+- **Master memory**: `.agent/master-memory.md` template for project preferences
+- **Custom skill registration**: `.agent/skills/custom/*/SKILL.md` auto-discovered
+- **Upstream sync config**: `skills_sources.json` with 3 upstream sources
+- **Architecture docs**: `docs/ARCHITECTURE.md` and `docs/CUSTOM-SKILLS.md`
+
+### Fixed
+- **MAX_SKILLS contradiction**: Removed dead `MAX_SKILLS_CAP`, consolidated to single constant
+- **Feedback score overflow**: Capped at ±10, validates skill names against index
+- **Silent exceptions**: `load_bundles()` and `load_feedback()` now warn to stderr
+- **CHANGELOG version ordering**: Fixed 1.3.2/1.3.1 swap
+- **Security filter**: Now correctly filters security skills from ALL non-security tasks
+- **Duplicated code**: Extracted `get_skill_id()` helper (replaced 8 patterns)
+
+### Changed
+- **Python minimum**: Raised from 3.6 to **3.8**
+- **Skill count**: Updated from 626 to 1,200+ across all files
+- **Enhanced `--info`**: Shows tags, feedback score, context, tools, invocation hint
+- **Version**: Major bump to 2.0.0
+
+## [1.3.2] - 2026-02-05
+
+### Added
+- **Auto-execute router skill**: New `activate-skills` skill runs routing and applies skills without copy/paste
+
+### Changed
+- **README guidance**: Clarifies `/activate-skills` now runs end-to-end
+- **Global rules text**: Aligns router behavior with auto-execute flow
 
 ## [1.3.1] - 2026-02-03
 
@@ -18,15 +58,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Improved rules menu**: Checkmarks/X marks show pros/cons, clear recommendations
 - **Better explanations**: Each choice explains when to use  it and what it does
-
-## [1.3.2] - 2026-02-05
-
-### Added
-- **Auto-execute router skill**: New `activate-skills` skill runs routing and applies skills without copy/paste
-
-### Changed
-- **README guidance**: Clarifies `/activate-skills` now runs end-to-end
-- **Global rules text**: Aligns router behavior with auto-execute flow
 
 ## [1.3.0] - 2026-02-03
 

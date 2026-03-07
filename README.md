@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/nzkbuild/antigravity-optimizer?style=social)](https://github.com/nzkbuild/antigravity-optimizer)
 
-The **Antigravity Optimizer** automatically picks the right AI skills for your task. 600+ skills, zero memorization.
+The **Antigravity Optimizer** automatically picks the right AI skills for your task. 1,200+ skills, zero memorization.
 
 **Now:** precise routing, local feedback memory, zero ceremony.
 
@@ -72,7 +72,7 @@ Choose your mode:
 
 | Component | Description |
 |-----------|-------------|
-| **626 Skills** | Complete AI skills library |
+| **1,200+ Skills** | Complete AI skills library |
 | **Smart Routing** | Picks the best skills for your task |
 | **Feedback Memory** | Remembers what worked (`~/.codex/.router_feedback.json`) |
 | **Global Workflow** | `/activate-skills` works in any project |

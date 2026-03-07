@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Interactive onboarding for the Antigravity Optimizer.
-    Installs 600+ AI skills for use with Codex CLI and Antigravity IDE.
+    Installs 1,200+ AI skills for use with Codex CLI and Antigravity IDE.
     
     Modes:
     - Essentials: Installs skills, removes docs (recommended)
@@ -38,7 +38,7 @@
     Quick skill update only.
 
 .NOTES
-    Version:        1.3.2
+    Version:        2.0.0
     Author:         nzkbuild
     Repository:     https://github.com/nzkbuild/antigravity-optimizer
     Credits:        Skills from @sickn33's Antigravity Awesome Skills
@@ -70,7 +70,7 @@ param(
 # CONFIGURATION
 # ============================================================================
 
-$script:Version = "1.3.2"
+$script:Version = "2.0.0"
 $script:StartTime = Get-Date
 $script:ExitCode = 0
 $script:RepoRoot = $PSScriptRoot
@@ -168,7 +168,7 @@ function Show-WhatGetsInstalled {
     Write-Color "What gets installed?" $script:Colors.Yellow
     Write-Host "  +-----------------------------------------------------+"
     Write-Host "  | " -NoNewline
-    Write-Color "[1] 626 Skills" $script:Colors.Cyan -NoNewline
+    Write-Color "[1] 1,200+ Skills" $script:Colors.Cyan -NoNewline
     Write-Host "                                       |"
     Write-Host "  |    AI expertise files (React, Python, DevOps...)    |"
     Write-Host "  |    -> $env:USERPROFILE\.codex\skills\" -ForegroundColor Gray

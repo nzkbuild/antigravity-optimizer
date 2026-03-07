@@ -8,8 +8,12 @@ on:
 
 jobs:
   validate:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 15
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        python-version: ["3.8", "3.12"]
 
     steps:
       - name: Checkout
@@ -18,16 +22,26 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install pytest ruff
+
+      - name: Lint with ruff
+        run: ruff check tools/ tests/
 
       - name: Compile Python router
-        shell: pwsh
         run: python -m py_compile tools/skill_router.py
 
+      - name: Run tests
+        run: python -m pytest tests/ -v
+
       - name: Verify setup fix mode
+        if: matrix.os == 'windows-latest' && matrix.python-version == '3.12'
         shell: pwsh
         run: powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1 -Mode fix -Silent
 
       - name: Verify router index integrity
+        if: matrix.os == 'windows-latest' && matrix.python-version == '3.12'
         shell: pwsh
         run: powershell -NoProfile -ExecutionPolicy Bypass -File .\activate-skills.ps1 "quality check" --verify

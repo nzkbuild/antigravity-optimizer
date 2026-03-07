@@ -51,7 +51,7 @@ if (-not $pythonExe -and (Get-Command python -ErrorAction SilentlyContinue)) {
 }
 
 if (-not $pythonExe) {
-    Write-Error "Python is required but not found in PATH. Please install Python 3.6+ from https://python.org"
+    Write-Error "Python is required but not found in PATH. Please install Python 3.8+ from https://python.org/downloads/"
     exit 1
 }
 
